@@ -6,7 +6,10 @@ import (
   "os"
   "os/signal"
   "syscall"
+  "strings"
 )
+
+const COMMAND_PREFIX = "catan!"
 
 func main() {
   fmt.Println("Testing Discord bot")
@@ -39,11 +42,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
     return
   }
 
-  if m.Content == "haikyuu!" {
-    s.ChannelMessageSend(m.ChannelID, "Go Karasuno!")
-  }
-
-  if m.Content == "sasuke!" {
-    s.ChannelMessageSend(m.ChannelID, "naruto!")
+  if strings.HasPrefix(m.Content, COMMAND_PREFIX) {
+    s.ChannelMessageSend(m.ChannelID, "Command received!")
   }
 }
