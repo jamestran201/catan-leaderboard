@@ -9,7 +9,7 @@ import (
   "strings"
 )
 
-const COMMAND_PREFIX = "catan!"
+const COMMAND_PREFIX = "catanleaderboard!"
 
 func main() {
   fmt.Println("Testing Discord bot")
