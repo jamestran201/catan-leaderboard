@@ -50,30 +50,32 @@ func main() {
   discord.Close()
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-  if m.Author.ID == s.State.User.ID {
+func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
+  if m.Author.ID == session.State.User.ID {
     return
   }
 
   if strings.HasPrefix(m.Content, COMMAND_PREFIX) {
-    s.ChannelMessageSend(m.ChannelID, "Command received!")
-
     message := strings.Split(m.Content, " ")
     if message[1] == "adduser" {
-      if len(message) == 3 {
-        _, err := db_conn.Exec(context.Background(), "INSERT INTO users (username) VALUES ($1)", message[2])
-        if err != nil {
-          s.ChannelMessageSend(m.ChannelID, "An error has occurred")
-          fmt.Println("Error: ", err)
-          return
-        }
-
-
-        response := fmt.Sprintf("Successfully added user: %s", message[2])
-        s.ChannelMessageSend(m.ChannelID, response)
-      } else {
-        s.ChannelMessageSend(m.ChannelID, "Command format: adduser [username]")
-      }
+      addUserCommand(session, m, message)
     }
+  }
+}
+
+func addUserCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
+  if len(message) == 3 {
+    _, err := db_conn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", message[2], m.GuildID)
+    if err != nil {
+      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+      fmt.Println("Error: ", err)
+      return
+    }
+
+
+    response := fmt.Sprintf("Successfully added user: %s", message[2])
+    session.ChannelMessageSend(m.ChannelID, response)
+  } else {
+    session.ChannelMessageSend(m.ChannelID, "Command format: adduser [username]")
   }
 }
