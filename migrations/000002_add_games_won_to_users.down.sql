@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE users DROP COLUMN IF EXISTS games_won;
+
+COMMIT;

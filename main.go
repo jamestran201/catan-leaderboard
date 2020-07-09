@@ -59,6 +59,8 @@ func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
     message := strings.Split(m.Content, " ")
     if message[1] == "adduser" {
       addUserCommand(session, m, message)
+    } else if message[1] == "addwin" {
+      addWinCommand(session, m, message)
     }
   }
 }
@@ -79,3 +81,37 @@ func addUserCommand(session *discordgo.Session, m *discordgo.MessageCreate, mess
     session.ChannelMessageSend(m.ChannelID, "Command format: adduser [username]")
   }
 }
+
+func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
+  if len(message) == 3 {
+    row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
+    var record_exists int
+    err := row.Scan(&record_exists)
+    if err != nil {
+      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+      fmt.Println("Error: ", err)
+      return
+    }
+
+    var response string
+    if record_exists == 0 {
+      response = fmt.Sprintf("User %s does not exist", message[2])
+    } else {
+      _, err = db_conn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
+      if err != nil {
+        session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+        fmt.Println("Error: ", err)
+        return
+      }
+
+      response = fmt.Sprintf("Congrats %s on the win!", message[2])
+    }
+
+    session.ChannelMessageSend(m.ChannelID, response)
+  } else {
+    session.ChannelMessageSend(m.ChannelID, "Command format: addwin [username]")
+  }
+
+  return
+}
+
