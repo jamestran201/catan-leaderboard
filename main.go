@@ -33,6 +33,7 @@ func main() {
     fmt.Println("Error creating Discord session: ", err)
     os.Exit(1)
   }
+  defer discord.Close()
 
   discord.AddHandler(messageCreate)
 
@@ -46,8 +47,6 @@ func main() {
   sc := make(chan os.Signal, 1)
   signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
   <-sc
-
-  discord.Close()
 }
 
 func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
