@@ -116,7 +116,7 @@ func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, messa
 }
 
 func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  rows, err := db_conn.Query(context.Background(), "SELECT RANK() OVER (ORDER BY games_won DESC), username, games_won FROM users LIMIT 5")
+  rows, err := db_conn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users LIMIT 5")
   if err != nil {
     session.ChannelMessageSend(m.ChannelID, "An error has occurred")
     fmt.Println("Error: ", err)
@@ -125,22 +125,28 @@ func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCrea
 
   defer rows.Close()
 
-  var response_rows [5]string
+  var (
+    rankField = discordgo.MessageEmbedField{"Rank", "", true}
+    usernameField = discordgo.MessageEmbedField{"Username", "", true}
+    victoriesField = discordgo.MessageEmbedField{"Victories", "", true}
 
-  for rows.Next() {
-    var rank int
-    var username string
-    var games_won int
-    err = rows.Scan(&rank, &username, &games_won)
+    ranks [5]string
+    usernames [5]string
+    victories [5]string
+  )
+
+  for i := 0; rows.Next(); i++ {
+    err = rows.Scan(&ranks[i], &usernames[i], &victories[i])
     if err != nil {
       session.ChannelMessageSend(m.ChannelID, "An error has occurred")
       fmt.Println("Error: ", err)
       return
     }
-
-    response_row := fmt.Sprintf("%d. %s - %d games won", rank, username, games_won)
-    response_rows[rank-1] = response_row
   }
+
+  rankField.Value = strings.Join(ranks[:], "\n")
+  usernameField.Value = strings.Join(usernames[:], "\n")
+  victoriesField.Value = strings.Join(victories[:], "\n")
 
   if rows.Err() != nil {
     session.ChannelMessageSend(m.ChannelID, "An error has occurred")
@@ -148,6 +154,7 @@ func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCrea
     return
   }
 
-  response := strings.Join(response_rows[:], "\n")
-  session.ChannelMessageSend(m.ChannelID, response)
+  messageEmbed := discordgo.MessageEmbed{}
+  messageEmbed.Fields = []*discordgo.MessageEmbedField{&rankField, &usernameField, &victoriesField}
+  session.ChannelMessageSendEmbed(m.ChannelID, &messageEmbed)
 }
