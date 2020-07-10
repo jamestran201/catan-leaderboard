@@ -61,6 +61,8 @@ func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
       addUserCommand(session, m, message)
     } else if message[1] == "addwin" {
       addWinCommand(session, m, message)
+    } else if message[1] == "leaderboard" {
+      showLeaderboardCommand(session, m, message)
     }
   }
 }
@@ -111,7 +113,41 @@ func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, messa
   } else {
     session.ChannelMessageSend(m.ChannelID, "Command format: addwin [username]")
   }
-
-  return
 }
 
+func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
+  rows, err := db_conn.Query(context.Background(), "SELECT RANK() OVER (ORDER BY games_won DESC), username, games_won FROM users LIMIT 5")
+  if err != nil {
+    session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+    fmt.Println("Error: ", err)
+    return
+  }
+
+  defer rows.Close()
+
+  var response_rows [5]string
+
+  for rows.Next() {
+    var rank int
+    var username string
+    var games_won int
+    err = rows.Scan(&rank, &username, &games_won)
+    if err != nil {
+      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+      fmt.Println("Error: ", err)
+      return
+    }
+
+    response_row := fmt.Sprintf("%d. %s - %d games won", rank, username, games_won)
+    response_rows[rank-1] = response_row
+  }
+
+  if rows.Err() != nil {
+    session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+    fmt.Println("Error: ", err)
+    return
+  }
+
+  response := strings.Join(response_rows[:], "\n")
+  session.ChannelMessageSend(m.ChannelID, response)
+}
