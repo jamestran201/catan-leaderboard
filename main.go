@@ -9,6 +9,10 @@ import (
   "os/signal"
   "syscall"
   "strings"
+  "github.com/golang-migrate/migrate/v4"
+  "github.com/golang-migrate/migrate/v4/database/postgres"
+  _ "github.com/golang-migrate/migrate/v4/source/file"
+  "database/sql"
 )
 
 const COMMAND_PREFIX = "catan!"
@@ -16,7 +20,31 @@ const COMMAND_PREFIX = "catan!"
 var db_conn *pgx.Conn
 
 func init() {
-  var err error
+  db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+  if err != nil {
+    fmt.Println("Error preparing database connection for migration: ", err)
+    os.Exit(1)
+  }
+
+  driver, err := postgres.WithInstance(db, &postgres.Config{})
+  if err != nil {
+    fmt.Println("Error preparing database driver for migration: ", err)
+    os.Exit(1)
+  }
+
+  migration, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
+  if err != nil {
+    fmt.Println("Error during migration: ", err)
+    os.Exit(1)
+  }
+
+  migration.Up()
+  err = db.Close()
+  if err != nil {
+    fmt.Println("Error closing connection after migration: ", err)
+    os.Exit(1)
+  }
+
   db_conn, err = pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
   if err != nil {
     fmt.Println("Error connecting to the database: ", err)
