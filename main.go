@@ -17,7 +17,7 @@ var db_conn *pgx.Conn
 
 func init() {
   var err error
-  db_conn, err = pgx.Connect(context.Background(), os.Getenv("POSTGRESQL_URL"))
+  db_conn, err = pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
   if err != nil {
     fmt.Println("Error connecting to the database: ", err)
     os.Exit(1)
