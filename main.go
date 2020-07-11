@@ -148,7 +148,7 @@ func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, messa
 }
 
 func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  rows, err := db_conn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users LIMIT 5")
+  rows, err := db_conn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", m.GuildID)
   if err != nil {
     session.ChannelMessageSend(m.ChannelID, "An error has occurred")
     fmt.Println("Error: ", err)
