@@ -56,12 +56,17 @@ func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 
   if strings.HasPrefix(m.Content, COMMAND_PREFIX) {
     message := strings.Split(m.Content, " ")
-    if message[1] == "adduser" {
+    help_message := "The available commands are: adduser, addwin, leaderboard"
+    if len(message) == 1 {
+      session.ChannelMessageSend(m.ChannelID, help_message)
+    } else if message[1] == "adduser" {
       addUserCommand(session, m, message)
     } else if message[1] == "addwin" {
       addWinCommand(session, m, message)
     } else if message[1] == "leaderboard" {
       showLeaderboardCommand(session, m, message)
+    } else {
+      session.ChannelMessageSend(m.ChannelID, help_message)
     }
   }
 }
