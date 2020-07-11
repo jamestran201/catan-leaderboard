@@ -84,13 +84,19 @@ func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 
   if strings.HasPrefix(m.Content, COMMAND_PREFIX) {
     message := strings.Split(m.Content, " ")
-    help_message := "The available commands are: adduser, addwin, leaderboard"
+    help_message := "The available commands are: adduser, addwin, addsecondplace, addthirdplace, addlastplace, leaderboard"
     if len(message) == 1 {
       session.ChannelMessageSend(m.ChannelID, help_message)
     } else if message[1] == "adduser" {
       addUserCommand(session, m, message)
     } else if message[1] == "addwin" {
       addWinCommand(session, m, message)
+    } else if message[1] == "addsecondplace" {
+      addSecondPlaceCommand(session, m, message)
+    } else if message[1] == "addthirdplace" {
+      addThirdPlaceCommand(session, m, message)
+    } else if message[1] == "addlastplace" {
+      addLastPlaceCommand(session, m, message)
     } else if message[1] == "leaderboard" {
       showLeaderboardCommand(session, m, message)
     } else {
@@ -147,8 +153,101 @@ func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, messa
   }
 }
 
+func addSecondPlaceCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
+  if len(message) == 3 {
+    row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
+    var record_exists int
+    err := row.Scan(&record_exists)
+    if err != nil {
+      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+      fmt.Println("Error: ", err)
+      return
+    }
+
+    var response string
+    if record_exists == 0 {
+      response = fmt.Sprintf("User %s does not exist", message[2])
+    } else {
+      _, err = db_conn.Exec(context.Background(), "UPDATE users SET second_place = second_place + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
+      if err != nil {
+        session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+        fmt.Println("Error: ", err)
+        return
+      }
+
+      response = "Successfully recorded game"
+    }
+
+    session.ChannelMessageSend(m.ChannelID, response)
+  } else {
+    session.ChannelMessageSend(m.ChannelID, "Command format: addsecondplace [username]")
+  }
+}
+
+func addThirdPlaceCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
+  if len(message) == 3 {
+    row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
+    var record_exists int
+    err := row.Scan(&record_exists)
+    if err != nil {
+      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+      fmt.Println("Error: ", err)
+      return
+    }
+
+    var response string
+    if record_exists == 0 {
+      response = fmt.Sprintf("User %s does not exist", message[2])
+    } else {
+      _, err = db_conn.Exec(context.Background(), "UPDATE users SET third_place = third_place + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
+      if err != nil {
+        session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+        fmt.Println("Error: ", err)
+        return
+      }
+
+      response = "Successfully recorded game"
+    }
+
+    session.ChannelMessageSend(m.ChannelID, response)
+  } else {
+    session.ChannelMessageSend(m.ChannelID, "Command format: addthirdplace [username]")
+  }
+}
+
+func addLastPlaceCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
+  if len(message) == 3 {
+    row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
+    var record_exists int
+    err := row.Scan(&record_exists)
+    if err != nil {
+      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+      fmt.Println("Error: ", err)
+      return
+    }
+
+    var response string
+    if record_exists == 0 {
+      response = fmt.Sprintf("User %s does not exist", message[2])
+    } else {
+      _, err = db_conn.Exec(context.Background(), "UPDATE users SET last_place = last_place + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
+      if err != nil {
+        session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+        fmt.Println("Error: ", err)
+        return
+      }
+
+      response = "Uh oh, poopies, stinkies"
+    }
+
+    session.ChannelMessageSend(m.ChannelID, response)
+  } else {
+    session.ChannelMessageSend(m.ChannelID, "Command format: addlastplace [username]")
+  }
+}
+
 func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  rows, err := db_conn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", m.GuildID)
+  rows, err := db_conn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC, second_place DESC, third_place DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", m.GuildID)
   if err != nil {
     session.ChannelMessageSend(m.ChannelID, "An error has occurred")
     fmt.Println("Error: ", err)

@@ -1,0 +1,10 @@
+BEGIN;
+
+ALTER TABLE users
+DROP COLUMN IF EXISTS second_place,
+DROP COLUMN IF EXISTS third_place,
+DROP COLUMN IF EXISTS last_place;
+
+DROP INDEX IF EXISTS users_ranking;
+
+COMMIT;
