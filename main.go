@@ -1,18 +1,18 @@
 package main
 
 import (
-  "github.com/bwmarrin/discordgo"
-  "github.com/jackc/pgx/v4"
-  "context"
-  "fmt"
-  "os"
-  "os/signal"
-  "syscall"
-  "strings"
-  "github.com/golang-migrate/migrate/v4"
-  "github.com/golang-migrate/migrate/v4/database/postgres"
-  _ "github.com/golang-migrate/migrate/v4/source/file"
-  "database/sql"
+	"context"
+	"database/sql"
+	"fmt"
+	"github.com/bwmarrin/discordgo"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v4"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 )
 
 const COMMAND_PREFIX = "catan!"
@@ -20,272 +20,172 @@ const COMMAND_PREFIX = "catan!"
 var db_conn *pgx.Conn
 
 func init() {
-  db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
-  if err != nil {
-    fmt.Println("Error preparing database connection for migration: ", err)
-    os.Exit(1)
-  }
+	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		fmt.Println("Error preparing database connection for migration: ", err)
+		os.Exit(1)
+	}
 
-  driver, err := postgres.WithInstance(db, &postgres.Config{})
-  if err != nil {
-    fmt.Println("Error preparing database driver for migration: ", err)
-    os.Exit(1)
-  }
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		fmt.Println("Error preparing database driver for migration: ", err)
+		os.Exit(1)
+	}
 
-  migration, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
-  if err != nil {
-    fmt.Println("Error during migration: ", err)
-    os.Exit(1)
-  }
+	migration, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
+	if err != nil {
+		fmt.Println("Error during migration: ", err)
+		os.Exit(1)
+	}
 
-  migration.Up()
-  err = db.Close()
-  if err != nil {
-    fmt.Println("Error closing connection after migration: ", err)
-    os.Exit(1)
-  }
+	migration.Up()
+	err = db.Close()
+	if err != nil {
+		fmt.Println("Error closing connection after migration: ", err)
+		os.Exit(1)
+	}
 
-  db_conn, err = pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
-  if err != nil {
-    fmt.Println("Error connecting to the database: ", err)
-    os.Exit(1)
-  }
+	db_conn, err = pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		fmt.Println("Error connecting to the database: ", err)
+		os.Exit(1)
+	}
 }
 
 func main() {
-  defer db_conn.Close(context.Background())
+	defer db_conn.Close(context.Background())
 
-  token := os.Getenv("BOT_TOKEN")
-  discord, err := discordgo.New("Bot " + token)
-  if err != nil {
-    fmt.Println("Error creating Discord session: ", err)
-    os.Exit(1)
-  }
-  defer discord.Close()
+	token := os.Getenv("BOT_TOKEN")
+	discord, err := discordgo.New("Bot " + token)
+	if err != nil {
+		fmt.Println("Error creating Discord session: ", err)
+		os.Exit(1)
+	}
+	defer discord.Close()
 
-  discord.AddHandler(messageCreate)
+	discord.AddHandler(messageCreate)
 
-  err = discord.Open()
-  if err != nil {
-    fmt.Println("Error opening connection: ", err)
-    os.Exit(1)
-  }
+	err = discord.Open()
+	if err != nil {
+		fmt.Println("Error opening connection: ", err)
+		os.Exit(1)
+	}
 
-  fmt.Println("Bot is now running. Press CTRL-C to exit.")
-  sc := make(chan os.Signal, 1)
-  signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
-  <-sc
+	fmt.Println("Bot is now running. Press CTRL-C to exit.")
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	<-sc
 }
 
 func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
-  if m.Author.ID == session.State.User.ID {
-    return
-  }
+	if m.Author.ID == session.State.User.ID {
+		return
+	}
 
-  if strings.HasPrefix(m.Content, COMMAND_PREFIX) {
-    message := strings.Split(m.Content, " ")
-    help_message := "The available commands are: adduser, addwin, addsecondplace, addthirdplace, addlastplace, leaderboard"
-    if len(message) == 1 {
-      session.ChannelMessageSend(m.ChannelID, help_message)
-    } else if message[1] == "adduser" {
-      addUserCommand(session, m, message)
-    } else if message[1] == "addwin" {
-      addWinCommand(session, m, message)
-    } else if message[1] == "addsecondplace" {
-      addSecondPlaceCommand(session, m, message)
-    } else if message[1] == "addthirdplace" {
-      addThirdPlaceCommand(session, m, message)
-    } else if message[1] == "addlastplace" {
-      addLastPlaceCommand(session, m, message)
-    } else if message[1] == "leaderboard" {
-      showLeaderboardCommand(session, m, message)
-    } else {
-      session.ChannelMessageSend(m.ChannelID, help_message)
-    }
-  }
+	if strings.HasPrefix(m.Content, COMMAND_PREFIX) {
+		message := strings.Split(m.Content, " ")
+		help_message := "The available commands are: adduser, addwin, leaderboard"
+		if len(message) == 1 {
+			session.ChannelMessageSend(m.ChannelID, help_message)
+		} else if message[1] == "adduser" {
+			addUserCommand(session, m, message)
+		} else if message[1] == "addwin" {
+			addWinCommand(session, m, message)
+		} else if message[1] == "leaderboard" {
+			showLeaderboardCommand(session, m, message)
+		} else {
+			session.ChannelMessageSend(m.ChannelID, help_message)
+		}
+	}
 }
 
 func addUserCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  if len(message) == 3 {
-    _, err := db_conn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", message[2], m.GuildID)
-    if err != nil {
-      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-      fmt.Println("Error: ", err)
-      return
-    }
+	if len(message) == 3 {
+		_, err := db_conn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", message[2], m.GuildID)
+		if err != nil {
+			session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+			fmt.Println("Error: ", err)
+			return
+		}
 
-
-    response := fmt.Sprintf("Successfully added user: %s", message[2])
-    session.ChannelMessageSend(m.ChannelID, response)
-  } else {
-    session.ChannelMessageSend(m.ChannelID, "Command format: adduser [username]")
-  }
+		response := fmt.Sprintf("Successfully added user: %s", message[2])
+		session.ChannelMessageSend(m.ChannelID, response)
+	} else {
+		session.ChannelMessageSend(m.ChannelID, "Command format: adduser [username]")
+	}
 }
 
 func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  if len(message) == 3 {
-    row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
-    var record_exists int
-    err := row.Scan(&record_exists)
-    if err != nil {
-      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-      fmt.Println("Error: ", err)
-      return
-    }
+	if len(message) == 3 {
+		row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
+		var record_exists int
+		err := row.Scan(&record_exists)
+		if err != nil {
+			session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+			fmt.Println("Error: ", err)
+			return
+		}
 
-    var response string
-    if record_exists == 0 {
-      response = fmt.Sprintf("User %s does not exist", message[2])
-    } else {
-      _, err = db_conn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
-      if err != nil {
-        session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-        fmt.Println("Error: ", err)
-        return
-      }
+		var response string
+		if record_exists == 0 {
+			response = fmt.Sprintf("User %s does not exist", message[2])
+		} else {
+			_, err = db_conn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
+			if err != nil {
+				session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+				fmt.Println("Error: ", err)
+				return
+			}
 
-      response = fmt.Sprintf("Congrats %s on the win!", message[2])
-    }
+			response = fmt.Sprintf("Congrats %s on the win!", message[2])
+		}
 
-    session.ChannelMessageSend(m.ChannelID, response)
-  } else {
-    session.ChannelMessageSend(m.ChannelID, "Command format: addwin [username]")
-  }
-}
-
-func addSecondPlaceCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  if len(message) == 3 {
-    row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
-    var record_exists int
-    err := row.Scan(&record_exists)
-    if err != nil {
-      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-      fmt.Println("Error: ", err)
-      return
-    }
-
-    var response string
-    if record_exists == 0 {
-      response = fmt.Sprintf("User %s does not exist", message[2])
-    } else {
-      _, err = db_conn.Exec(context.Background(), "UPDATE users SET second_place = second_place + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
-      if err != nil {
-        session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-        fmt.Println("Error: ", err)
-        return
-      }
-
-      response = "Successfully recorded game"
-    }
-
-    session.ChannelMessageSend(m.ChannelID, response)
-  } else {
-    session.ChannelMessageSend(m.ChannelID, "Command format: addsecondplace [username]")
-  }
-}
-
-func addThirdPlaceCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  if len(message) == 3 {
-    row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
-    var record_exists int
-    err := row.Scan(&record_exists)
-    if err != nil {
-      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-      fmt.Println("Error: ", err)
-      return
-    }
-
-    var response string
-    if record_exists == 0 {
-      response = fmt.Sprintf("User %s does not exist", message[2])
-    } else {
-      _, err = db_conn.Exec(context.Background(), "UPDATE users SET third_place = third_place + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
-      if err != nil {
-        session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-        fmt.Println("Error: ", err)
-        return
-      }
-
-      response = "Successfully recorded game"
-    }
-
-    session.ChannelMessageSend(m.ChannelID, response)
-  } else {
-    session.ChannelMessageSend(m.ChannelID, "Command format: addthirdplace [username]")
-  }
-}
-
-func addLastPlaceCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  if len(message) == 3 {
-    row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
-    var record_exists int
-    err := row.Scan(&record_exists)
-    if err != nil {
-      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-      fmt.Println("Error: ", err)
-      return
-    }
-
-    var response string
-    if record_exists == 0 {
-      response = fmt.Sprintf("User %s does not exist", message[2])
-    } else {
-      _, err = db_conn.Exec(context.Background(), "UPDATE users SET last_place = last_place + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
-      if err != nil {
-        session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-        fmt.Println("Error: ", err)
-        return
-      }
-
-      response = "Uh oh, poopies, stinkies"
-    }
-
-    session.ChannelMessageSend(m.ChannelID, response)
-  } else {
-    session.ChannelMessageSend(m.ChannelID, "Command format: addlastplace [username]")
-  }
+		session.ChannelMessageSend(m.ChannelID, response)
+	} else {
+		session.ChannelMessageSend(m.ChannelID, "Command format: addwin [username]")
+	}
 }
 
 func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-  rows, err := db_conn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC, second_place DESC, third_place DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", m.GuildID)
-  if err != nil {
-    session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-    fmt.Println("Error: ", err)
-    return
-  }
+	rows, err := db_conn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", m.GuildID)
+	if err != nil {
+		session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+		fmt.Println("Error: ", err)
+		return
+	}
 
-  defer rows.Close()
+	defer rows.Close()
 
-  var (
-    rankField = discordgo.MessageEmbedField{"Rank", "", true}
-    usernameField = discordgo.MessageEmbedField{"Username", "", true}
-    victoriesField = discordgo.MessageEmbedField{"Victories", "", true}
+	var (
+		rankField      = discordgo.MessageEmbedField{"Rank", "", true}
+		usernameField  = discordgo.MessageEmbedField{"Username", "", true}
+		victoriesField = discordgo.MessageEmbedField{"Victories", "", true}
 
-    ranks [5]string
-    usernames [5]string
-    victories [5]string
-  )
+		ranks     [5]string
+		usernames [5]string
+		victories [5]string
+	)
 
-  for i := 0; rows.Next(); i++ {
-    err = rows.Scan(&ranks[i], &usernames[i], &victories[i])
-    if err != nil {
-      session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-      fmt.Println("Error: ", err)
-      return
-    }
-  }
+	for i := 0; rows.Next(); i++ {
+		err = rows.Scan(&ranks[i], &usernames[i], &victories[i])
+		if err != nil {
+			session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+			fmt.Println("Error: ", err)
+			return
+		}
+	}
 
-  rankField.Value = strings.Join(ranks[:], "\n")
-  usernameField.Value = strings.Join(usernames[:], "\n")
-  victoriesField.Value = strings.Join(victories[:], "\n")
+	rankField.Value = strings.Join(ranks[:], "\n")
+	usernameField.Value = strings.Join(usernames[:], "\n")
+	victoriesField.Value = strings.Join(victories[:], "\n")
 
-  if rows.Err() != nil {
-    session.ChannelMessageSend(m.ChannelID, "An error has occurred")
-    fmt.Println("Error: ", err)
-    return
-  }
+	if rows.Err() != nil {
+		session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+		fmt.Println("Error: ", err)
+		return
+	}
 
-  messageEmbed := discordgo.MessageEmbed{}
-  messageEmbed.Fields = []*discordgo.MessageEmbedField{&rankField, &usernameField, &victoriesField}
-  session.ChannelMessageSendEmbed(m.ChannelID, &messageEmbed)
+	messageEmbed := discordgo.MessageEmbed{}
+	messageEmbed.Fields = []*discordgo.MessageEmbedField{&rankField, &usernameField, &victoriesField}
+	session.ChannelMessageSendEmbed(m.ChannelID, &messageEmbed)
 }
