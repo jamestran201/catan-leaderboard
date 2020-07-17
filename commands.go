@@ -9,11 +9,11 @@ import (
 )
 
 func handleCommands(session *discordgo.Session, m *discordgo.MessageCreate) {
-	if strings.HasPrefix(m.Content, COMMAND_PREFIX) {
+	if strings.HasPrefix(m.Content, commandPrefix) {
 		message := strings.Split(m.Content, " ")
-		help_message := "The available commands are: adduser, addwin, leaderboard"
+		helpMessage := "The available commands are: adduser, addwin, leaderboard"
 		if len(message) == 1 {
-			session.ChannelMessageSend(m.ChannelID, help_message)
+			session.ChannelMessageSend(m.ChannelID, helpMessage)
 		} else if message[1] == "adduser" {
 			addUserCommand(session, m, message)
 		} else if message[1] == "addwin" {
@@ -21,14 +21,14 @@ func handleCommands(session *discordgo.Session, m *discordgo.MessageCreate) {
 		} else if message[1] == "leaderboard" {
 			showLeaderboardCommand(session, m, message)
 		} else {
-			session.ChannelMessageSend(m.ChannelID, help_message)
+			session.ChannelMessageSend(m.ChannelID, helpMessage)
 		}
 	}
 }
 
 func addUserCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
 	if len(message) == 3 {
-		_, err := db_conn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", message[2], m.GuildID)
+		_, err := dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", message[2], m.GuildID)
 		if err != nil {
 			session.ChannelMessageSend(m.ChannelID, "An error has occurred")
 			fmt.Println("Error: ", err)
@@ -44,9 +44,9 @@ func addUserCommand(session *discordgo.Session, m *discordgo.MessageCreate, mess
 
 func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
 	if len(message) == 3 {
-		row := db_conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
-		var record_exists int
-		err := row.Scan(&record_exists)
+		row := dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
+		var recordExists int
+		err := row.Scan(&recordExists)
 		if err != nil {
 			session.ChannelMessageSend(m.ChannelID, "An error has occurred")
 			fmt.Println("Error: ", err)
@@ -54,10 +54,10 @@ func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, messa
 		}
 
 		var response string
-		if record_exists == 0 {
+		if recordExists == 0 {
 			response = fmt.Sprintf("User %s does not exist", message[2])
 		} else {
-			_, err = db_conn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
+			_, err = dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
 			if err != nil {
 				session.ChannelMessageSend(m.ChannelID, "An error has occurred")
 				fmt.Println("Error: ", err)
@@ -74,7 +74,7 @@ func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, messa
 }
 
 func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-	rows, err := db_conn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", m.GuildID)
+	rows, err := dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", m.GuildID)
 	if err != nil {
 		session.ChannelMessageSend(m.ChannelID, "An error has occurred")
 		fmt.Println("Error: ", err)

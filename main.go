@@ -14,9 +14,9 @@ import (
 	"syscall"
 )
 
-const COMMAND_PREFIX = "catan!"
+const commandPrefix = "catan!"
 
-var db_conn *pgx.Conn
+var dbConn *pgx.Conn
 
 func init() {
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
@@ -44,7 +44,7 @@ func init() {
 		os.Exit(1)
 	}
 
-	db_conn, err = pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	dbConn, err = pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Println("Error connecting to the database: ", err)
 		os.Exit(1)
@@ -52,7 +52,7 @@ func init() {
 }
 
 func main() {
-	defer db_conn.Close(context.Background())
+	defer dbConn.Close(context.Background())
 
 	token := os.Getenv("BOT_TOKEN")
 	discord, err := discordgo.New("Bot " + token)
