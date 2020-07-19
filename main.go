@@ -14,8 +14,6 @@ import (
 	"syscall"
 )
 
-const commandPrefix = "catan!"
-
 var dbConn *pgx.Conn
 
 func init() {
@@ -81,5 +79,6 @@ func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	handleCommands(session, m)
+	bot := CatanBot{session, m}
+	bot.handleCommand()
 }

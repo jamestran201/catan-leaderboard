@@ -8,47 +8,54 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func handleCommands(session *discordgo.Session, m *discordgo.MessageCreate) {
-	if strings.HasPrefix(m.Content, commandPrefix) {
-		message := strings.Split(m.Content, " ")
+const commandPrefix = "catan!"
+
+type CatanBot struct {
+	session        *discordgo.Session
+	discordMessage *discordgo.MessageCreate
+}
+
+func (bot *CatanBot) handleCommand() {
+	if strings.HasPrefix(bot.discordMessage.Content, commandPrefix) {
+		message := strings.Split(bot.discordMessage.Content, " ")
 		helpMessage := "The available commands are: adduser, addwin, leaderboard"
 		if len(message) == 1 {
-			session.ChannelMessageSend(m.ChannelID, helpMessage)
+			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, helpMessage)
 		} else if message[1] == "adduser" {
-			addUserCommand(session, m, message)
+			bot.addUserCommand(message)
 		} else if message[1] == "addwin" {
-			addWinCommand(session, m, message)
+			bot.addWinCommand(message)
 		} else if message[1] == "leaderboard" {
-			showLeaderboardCommand(session, m, message)
+			bot.showLeaderboardCommand(message)
 		} else {
-			session.ChannelMessageSend(m.ChannelID, helpMessage)
+			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, helpMessage)
 		}
 	}
 }
 
-func addUserCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
+func (bot *CatanBot) addUserCommand(message []string) {
 	if len(message) == 3 {
-		_, err := dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", message[2], m.GuildID)
+		_, err := dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", message[2], bot.discordMessage.GuildID)
 		if err != nil {
-			session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 			fmt.Println("Error: ", err)
 			return
 		}
 
 		response := fmt.Sprintf("Successfully added user: %s", message[2])
-		session.ChannelMessageSend(m.ChannelID, response)
+		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, response)
 	} else {
-		session.ChannelMessageSend(m.ChannelID, "Command format: adduser [username]")
+		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "Command format: adduser [username]")
 	}
 }
 
-func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
+func (bot *CatanBot) addWinCommand(message []string) {
 	if len(message) == 3 {
-		row := dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], m.GuildID)
+		row := dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], bot.discordMessage.GuildID)
 		var recordExists int
 		err := row.Scan(&recordExists)
 		if err != nil {
-			session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 			fmt.Println("Error: ", err)
 			return
 		}
@@ -57,9 +64,9 @@ func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, messa
 		if recordExists == 0 {
 			response = fmt.Sprintf("User %s does not exist", message[2])
 		} else {
-			_, err = dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], m.GuildID)
+			_, err = dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], bot.discordMessage.GuildID)
 			if err != nil {
-				session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+				bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 				fmt.Println("Error: ", err)
 				return
 			}
@@ -67,16 +74,16 @@ func addWinCommand(session *discordgo.Session, m *discordgo.MessageCreate, messa
 			response = fmt.Sprintf("Congrats %s on the win!", message[2])
 		}
 
-		session.ChannelMessageSend(m.ChannelID, response)
+		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, response)
 	} else {
-		session.ChannelMessageSend(m.ChannelID, "Command format: addwin [username]")
+		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "Command format: addwin [username]")
 	}
 }
 
-func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCreate, message []string) {
-	rows, err := dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", m.GuildID)
+func (bot *CatanBot) showLeaderboardCommand(message []string) {
+	rows, err := dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", bot.discordMessage.GuildID)
 	if err != nil {
-		session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 		fmt.Println("Error: ", err)
 		return
 	}
@@ -96,7 +103,7 @@ func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCrea
 	for i := 0; rows.Next(); i++ {
 		err = rows.Scan(&ranks[i], &usernames[i], &victories[i])
 		if err != nil {
-			session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 			fmt.Println("Error: ", err)
 			return
 		}
@@ -107,12 +114,12 @@ func showLeaderboardCommand(session *discordgo.Session, m *discordgo.MessageCrea
 	victoriesField.Value = strings.Join(victories[:], "\n")
 
 	if rows.Err() != nil {
-		session.ChannelMessageSend(m.ChannelID, "An error has occurred")
+		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 		fmt.Println("Error: ", err)
 		return
 	}
 
 	messageEmbed := discordgo.MessageEmbed{}
 	messageEmbed.Fields = []*discordgo.MessageEmbedField{&rankField, &usernameField, &victoriesField}
-	session.ChannelMessageSendEmbed(m.ChannelID, &messageEmbed)
+	bot.session.ChannelMessageSendEmbed(bot.discordMessage.ChannelID, &messageEmbed)
 }
