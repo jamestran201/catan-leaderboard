@@ -68,6 +68,7 @@ func (bot *CatanBot) addWinCommand() {
 		var response string
 		if recordExists == 0 {
 			response = fmt.Sprintf("User %s does not exist", bot.messageParts[2])
+			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, response)
 		} else {
 			_, err = dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", bot.messageParts[2], bot.discordMessage.GuildID)
 			if err != nil {
@@ -76,21 +77,26 @@ func (bot *CatanBot) addWinCommand() {
 				return
 			}
 
-			response = fmt.Sprintf("Congrats %s on the win!", bot.messageParts[2])
-		}
+			messageEmbed := bot.createLeaderboardResponse()
+			messageEmbed.Title = fmt.Sprintf("Congrats %s on the win!", bot.messageParts[2])
 
-		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, response)
+			bot.session.ChannelMessageSendEmbed(bot.discordMessage.ChannelID, messageEmbed)
+		}
 	} else {
 		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "Command format: addwin [username]")
 	}
 }
 
 func (bot *CatanBot) showLeaderboardCommand() {
+	bot.session.ChannelMessageSendEmbed(bot.discordMessage.ChannelID, bot.createLeaderboardResponse())
+}
+
+func (bot *CatanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
 	rows, err := dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", bot.discordMessage.GuildID)
 	if err != nil {
 		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 		fmt.Println("Error: ", err)
-		return
+		return nil
 	}
 
 	defer rows.Close()
@@ -110,7 +116,7 @@ func (bot *CatanBot) showLeaderboardCommand() {
 		if err != nil {
 			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 			fmt.Println("Error: ", err)
-			return
+			return nil
 		}
 	}
 
@@ -121,10 +127,10 @@ func (bot *CatanBot) showLeaderboardCommand() {
 	if rows.Err() != nil {
 		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 		fmt.Println("Error: ", err)
-		return
+		return nil
 	}
 
 	messageEmbed := discordgo.MessageEmbed{}
 	messageEmbed.Fields = []*discordgo.MessageEmbedField{&rankField, &usernameField, &victoriesField}
-	bot.session.ChannelMessageSendEmbed(bot.discordMessage.ChannelID, &messageEmbed)
+	return &messageEmbed
 }
