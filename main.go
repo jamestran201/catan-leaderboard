@@ -79,6 +79,6 @@ func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	bot := CatanBot{session, m}
+	bot := CatanBot{session, m, nil}
 	bot.handleCommand()
 }

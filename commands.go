@@ -9,49 +9,54 @@ import (
 )
 
 const commandPrefix = "catan!"
+const helpMessage = "The available commands are: adduser, addwin, leaderboard"
 
 type CatanBot struct {
 	session        *discordgo.Session
 	discordMessage *discordgo.MessageCreate
+	messageParts   []string
 }
 
 func (bot *CatanBot) handleCommand() {
 	if strings.HasPrefix(bot.discordMessage.Content, commandPrefix) {
-		message := strings.Split(bot.discordMessage.Content, " ")
-		helpMessage := "The available commands are: adduser, addwin, leaderboard"
-		if len(message) == 1 {
-			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, helpMessage)
-		} else if message[1] == "adduser" {
-			bot.addUserCommand(message)
-		} else if message[1] == "addwin" {
-			bot.addWinCommand(message)
-		} else if message[1] == "leaderboard" {
-			bot.showLeaderboardCommand(message)
+		bot.messageParts = strings.Split(bot.discordMessage.Content, " ")
+		if len(bot.messageParts) == 1 {
+			bot.sendHelpMessage()
+		} else if bot.messageParts[1] == "adduser" {
+			bot.addUserCommand()
+		} else if bot.messageParts[1] == "addwin" {
+			bot.addWinCommand()
+		} else if bot.messageParts[1] == "leaderboard" {
+			bot.showLeaderboardCommand()
 		} else {
-			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, helpMessage)
+			bot.sendHelpMessage()
 		}
 	}
 }
 
-func (bot *CatanBot) addUserCommand(message []string) {
-	if len(message) == 3 {
-		_, err := dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", message[2], bot.discordMessage.GuildID)
+func (bot *CatanBot) sendHelpMessage() {
+	bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, helpMessage)
+}
+
+func (bot *CatanBot) addUserCommand() {
+	if len(bot.messageParts) == 3 {
+		_, err := dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", bot.messageParts[2], bot.discordMessage.GuildID)
 		if err != nil {
 			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 			fmt.Println("Error: ", err)
 			return
 		}
 
-		response := fmt.Sprintf("Successfully added user: %s", message[2])
+		response := fmt.Sprintf("Successfully added user: %s", bot.messageParts[2])
 		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, response)
 	} else {
 		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "Command format: adduser [username]")
 	}
 }
 
-func (bot *CatanBot) addWinCommand(message []string) {
-	if len(message) == 3 {
-		row := dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", message[2], bot.discordMessage.GuildID)
+func (bot *CatanBot) addWinCommand() {
+	if len(bot.messageParts) == 3 {
+		row := dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", bot.messageParts[2], bot.discordMessage.GuildID)
 		var recordExists int
 		err := row.Scan(&recordExists)
 		if err != nil {
@@ -62,16 +67,16 @@ func (bot *CatanBot) addWinCommand(message []string) {
 
 		var response string
 		if recordExists == 0 {
-			response = fmt.Sprintf("User %s does not exist", message[2])
+			response = fmt.Sprintf("User %s does not exist", bot.messageParts[2])
 		} else {
-			_, err = dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", message[2], bot.discordMessage.GuildID)
+			_, err = dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", bot.messageParts[2], bot.discordMessage.GuildID)
 			if err != nil {
 				bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
 				fmt.Println("Error: ", err)
 				return
 			}
 
-			response = fmt.Sprintf("Congrats %s on the win!", message[2])
+			response = fmt.Sprintf("Congrats %s on the win!", bot.messageParts[2])
 		}
 
 		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, response)
@@ -80,7 +85,7 @@ func (bot *CatanBot) addWinCommand(message []string) {
 	}
 }
 
-func (bot *CatanBot) showLeaderboardCommand(message []string) {
+func (bot *CatanBot) showLeaderboardCommand() {
 	rows, err := dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", bot.discordMessage.GuildID)
 	if err != nil {
 		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
