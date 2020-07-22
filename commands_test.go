@@ -10,7 +10,8 @@ func TestSendHelpMessageForUnknownCommand(t *testing.T) {
 	message := &discordgo.Message{Content: "catan! random"}
 	messageCreate := &discordgo.MessageCreate{message}
 	sender := MessageSenderMock{}
-	bot := &CatanBot{nil, messageCreate, nil, &sender}
+	messageParser := DiscordMessageParser{discordMessage: messageCreate}
+	bot := &CatanBot{nil, messageCreate, nil, &sender, &messageParser}
 
 	bot.handleCommand()
 
@@ -23,7 +24,8 @@ func TestSendHelpMessage(t *testing.T) {
 	message := &discordgo.Message{Content: "catan!"}
 	messageCreate := &discordgo.MessageCreate{message}
 	sender := MessageSenderMock{}
-	bot := &CatanBot{nil, messageCreate, nil, &sender}
+	messageParser := DiscordMessageParser{discordMessage: messageCreate}
+	bot := &CatanBot{nil, messageCreate, nil, &sender, &messageParser}
 
 	bot.handleCommand()
 

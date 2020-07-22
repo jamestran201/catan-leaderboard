@@ -16,12 +16,13 @@ type CatanBot struct {
 	discordMessage *discordgo.MessageCreate
 	messageParts   []string
 	messageSender  MessageSender
+	messageParser  MessageParser
 }
 
 func (bot *CatanBot) handleCommand() {
-	if strings.HasPrefix(bot.discordMessage.Content, commandPrefix) {
+	if bot.messageParser.IsCommand() {
 		bot.messageParts = strings.Split(bot.discordMessage.Content, " ")
-		if len(bot.messageParts) == 1 {
+		if bot.messageParser.MessageLength() == 1 {
 			bot.messageSender.sendMessage(helpMessage)
 		} else if bot.messageParts[1] == "adduser" {
 			bot.addUserCommand()
@@ -36,7 +37,7 @@ func (bot *CatanBot) handleCommand() {
 }
 
 func (bot *CatanBot) addUserCommand() {
-	if len(bot.messageParts) == 3 {
+	if bot.messageParser.MessageLength() == 3 {
 		_, err := dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", bot.messageParts[2], bot.discordMessage.GuildID)
 		if err != nil {
 			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
@@ -52,7 +53,7 @@ func (bot *CatanBot) addUserCommand() {
 }
 
 func (bot *CatanBot) addWinCommand() {
-	if len(bot.messageParts) == 3 {
+	if bot.messageParser.MessageLength() == 3 {
 		row := dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", bot.messageParts[2], bot.discordMessage.GuildID)
 		var recordExists int
 		err := row.Scan(&recordExists)
