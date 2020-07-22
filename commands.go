@@ -11,13 +11,13 @@ import (
 const commandPrefix = "catan!"
 const helpMessage = "The available commands are: adduser, addwin, leaderboard"
 
-type CatanBot struct {
+type catanBot struct {
 	session        *discordgo.Session
 	discordMessage *discordgo.MessageCreate
 	messageParts   []string
 }
 
-func (bot *CatanBot) handleCommand() {
+func (bot *catanBot) handleCommand() {
 	if strings.HasPrefix(bot.discordMessage.Content, commandPrefix) {
 		bot.messageParts = strings.Split(bot.discordMessage.Content, " ")
 		if len(bot.messageParts) == 1 {
@@ -34,11 +34,11 @@ func (bot *CatanBot) handleCommand() {
 	}
 }
 
-func (bot *CatanBot) sendHelpMessage() {
+func (bot *catanBot) sendHelpMessage() {
 	bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, helpMessage)
 }
 
-func (bot *CatanBot) addUserCommand() {
+func (bot *catanBot) addUserCommand() {
 	if len(bot.messageParts) == 3 {
 		_, err := dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", bot.messageParts[2], bot.discordMessage.GuildID)
 		if err != nil {
@@ -54,7 +54,7 @@ func (bot *CatanBot) addUserCommand() {
 	}
 }
 
-func (bot *CatanBot) addWinCommand() {
+func (bot *catanBot) addWinCommand() {
 	if len(bot.messageParts) == 3 {
 		row := dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", bot.messageParts[2], bot.discordMessage.GuildID)
 		var recordExists int
@@ -87,11 +87,11 @@ func (bot *CatanBot) addWinCommand() {
 	}
 }
 
-func (bot *CatanBot) showLeaderboardCommand() {
+func (bot *catanBot) showLeaderboardCommand() {
 	bot.session.ChannelMessageSendEmbed(bot.discordMessage.ChannelID, bot.createLeaderboardResponse())
 }
 
-func (bot *CatanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
+func (bot *catanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
 	rows, err := dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", bot.discordMessage.GuildID)
 	if err != nil {
 		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
