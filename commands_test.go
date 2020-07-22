@@ -19,6 +19,19 @@ func TestSendHelpMessageForUnknownCommand(t *testing.T) {
 	}
 }
 
+func TestSendHelpMessage(t *testing.T) {
+	message := &discordgo.Message{Content: "catan!"}
+	messageCreate := &discordgo.MessageCreate{message}
+	sender := MessageSenderMock{}
+	bot := &CatanBot{nil, messageCreate, nil, &sender}
+
+	bot.handleCommand()
+
+	if sender.messageSent != helpMessage {
+		t.Errorf("Got %s\nWant %s", sender.messageSent, helpMessage)
+	}
+}
+
 type MessageSenderMock struct {
 	messageSent string
 }

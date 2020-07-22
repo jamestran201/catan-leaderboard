@@ -22,7 +22,7 @@ func (bot *CatanBot) handleCommand() {
 	if strings.HasPrefix(bot.discordMessage.Content, commandPrefix) {
 		bot.messageParts = strings.Split(bot.discordMessage.Content, " ")
 		if len(bot.messageParts) == 1 {
-			bot.sendHelpMessage()
+			bot.messageSender.sendMessage(helpMessage)
 		} else if bot.messageParts[1] == "adduser" {
 			bot.addUserCommand()
 		} else if bot.messageParts[1] == "addwin" {
@@ -33,10 +33,6 @@ func (bot *CatanBot) handleCommand() {
 			bot.messageSender.sendMessage(helpMessage)
 		}
 	}
-}
-
-func (bot *CatanBot) sendHelpMessage() {
-	bot.messageSender.sendMessage(helpMessage)
 }
 
 func (bot *CatanBot) addUserCommand() {
