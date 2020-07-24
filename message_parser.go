@@ -10,6 +10,8 @@ type MessageParser interface {
 	IsCommand() bool
 	MessageLength() int
 	GetCommand() string
+	GetCommandArgument() string
+	GetGuildID() string
 }
 
 type DiscordMessageParser struct {
@@ -35,4 +37,16 @@ func (parser *DiscordMessageParser) GetCommand() string {
 	} else {
 		return parser.parsedMessage[1]
 	}
+}
+
+func (parser *DiscordMessageParser) GetCommandArgument() string {
+	if parser.MessageLength() < 3 {
+		return "" // make this return an error in the future
+	} else {
+		return parser.parsedMessage[2]
+	}
+}
+
+func (parser *DiscordMessageParser) GetGuildID() string {
+	return parser.discordMessage.GuildID
 }

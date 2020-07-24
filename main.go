@@ -81,6 +81,7 @@ func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 
 	messageSender := &DiscordMessageSender{session, m}
 	messageParser := &DiscordMessageParser{discordMessage: m}
-	bot := CatanBot{session, m, nil, messageSender, messageParser}
+	db := &PostgresDataLayer{dbConn}
+	bot := CatanBot{session, m, nil, messageSender, messageParser, db}
 	bot.handleCommand()
 }

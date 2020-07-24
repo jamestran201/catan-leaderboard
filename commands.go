@@ -17,6 +17,7 @@ type CatanBot struct {
 	messageParts   []string
 	messageSender  MessageSender
 	messageParser  MessageParser
+	db             DataLayer
 }
 
 func (bot *CatanBot) handleCommand() {
@@ -38,17 +39,17 @@ func (bot *CatanBot) handleCommand() {
 
 func (bot *CatanBot) addUserCommand() {
 	if bot.messageParser.MessageLength() == 3 {
-		_, err := dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", bot.messageParts[2], bot.discordMessage.GuildID)
+		err := bot.db.AddUser(bot.messageParser.GetCommandArgument(), bot.messageParser.GetGuildID())
 		if err != nil {
-			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
+			bot.messageSender.sendMessage("An error has occurred")
 			fmt.Println("Error: ", err)
 			return
 		}
 
-		response := fmt.Sprintf("Successfully added user: %s", bot.messageParts[2])
-		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, response)
+		response := fmt.Sprintf("Successfully added user: %s", bot.messageParser.GetCommandArgument())
+		bot.messageSender.sendMessage(response)
 	} else {
-		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "Command format: adduser [username]")
+		bot.messageSender.sendMessage("Command format: adduser [username]")
 	}
 }
 
