@@ -11,7 +11,7 @@ func TestSendHelpMessageForUnknownCommand(t *testing.T) {
 	messageCreate := &discordgo.MessageCreate{message}
 	sender := MessageSenderMock{}
 	messageParser := DiscordMessageParser{discordMessage: messageCreate}
-	bot := &CatanBot{nil, messageCreate, nil, &sender, &messageParser, nil}
+	bot := &CatanBot{&sender, &messageParser, nil}
 
 	bot.handleCommand()
 
@@ -25,7 +25,7 @@ func TestSendHelpMessage(t *testing.T) {
 	messageCreate := &discordgo.MessageCreate{message}
 	sender := MessageSenderMock{}
 	messageParser := DiscordMessageParser{discordMessage: messageCreate}
-	bot := &CatanBot{nil, messageCreate, nil, &sender, &messageParser, nil}
+	bot := &CatanBot{&sender, &messageParser, nil}
 
 	bot.handleCommand()
 
@@ -40,7 +40,7 @@ func TestAddUserSuccess(t *testing.T) {
 	sender := MessageSenderMock{}
 	messageParser := DiscordMessageParser{discordMessage: messageCreate}
 	db := &MockDataLayer{}
-	bot := &CatanBot{nil, messageCreate, nil, &sender, &messageParser, db}
+	bot := &CatanBot{&sender, &messageParser, db}
 
 	bot.handleCommand()
 
@@ -56,7 +56,7 @@ func TestAddUserWrongFormat(t *testing.T) {
 	sender := MessageSenderMock{}
 	messageParser := DiscordMessageParser{discordMessage: messageCreate}
 	db := &MockDataLayer{}
-	bot := &CatanBot{nil, messageCreate, nil, &sender, &messageParser, db}
+	bot := &CatanBot{&sender, &messageParser, db}
 
 	bot.handleCommand()
 
@@ -84,4 +84,12 @@ func (db *MockDataLayer) AddUser(username string, guild_id string) error {
 
 func (db *MockDataLayer) GetTopFiveUsers(guildID string) ([]User, error) {
 	return nil, nil
+}
+
+func (db *MockDataLayer) CheckUserExists(username string, guild_id string) (int, error) {
+	return 0, nil
+}
+
+func (db *MockDataLayer) AddWin(username string, guild_id string) error {
+	return nil
 }

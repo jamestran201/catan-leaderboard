@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -12,17 +11,13 @@ const commandPrefix = "catan!"
 const helpMessage = "The available commands are: adduser, addwin, leaderboard"
 
 type CatanBot struct {
-	session        *discordgo.Session
-	discordMessage *discordgo.MessageCreate
-	messageParts   []string
-	messageSender  MessageSender
-	messageParser  MessageParser
-	db             DataLayer
+	messageSender MessageSender
+	messageParser MessageParser
+	db            DataLayer
 }
 
 func (bot *CatanBot) handleCommand() {
 	if bot.messageParser.IsCommand() {
-		bot.messageParts = strings.Split(bot.discordMessage.Content, " ")
 		if bot.messageParser.MessageLength() == 1 {
 			bot.messageSender.sendMessage(helpMessage)
 		} else if bot.messageParser.GetCommand() == "adduser" {
@@ -55,34 +50,36 @@ func (bot *CatanBot) addUserCommand() {
 
 func (bot *CatanBot) addWinCommand() {
 	if bot.messageParser.MessageLength() == 3 {
-		row := dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", bot.messageParts[2], bot.discordMessage.GuildID)
-		var recordExists int
-		err := row.Scan(&recordExists)
+		username := bot.messageParser.GetCommandArgument()
+		guildID := bot.messageParser.GetGuildID()
+
+		recordExists, err := bot.db.CheckUserExists(username, guildID)
+
 		if err != nil {
-			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
+			bot.messageSender.sendMessage("An error has occurred")
 			fmt.Println("Error: ", err)
 			return
 		}
 
-		var response string
 		if recordExists == 0 {
-			response = fmt.Sprintf("User %s does not exist", bot.messageParts[2])
-			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, response)
+			response := fmt.Sprintf("User %s does not exist", username)
+			bot.messageSender.sendMessage(response)
 		} else {
-			_, err = dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", bot.messageParts[2], bot.discordMessage.GuildID)
+			err = bot.db.AddWin(username, guildID)
+
 			if err != nil {
-				bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
+				bot.messageSender.sendMessage("An error has occurred")
 				fmt.Println("Error: ", err)
 				return
 			}
 
 			messageEmbed := bot.createLeaderboardResponse()
-			messageEmbed.Title = fmt.Sprintf("Congrats %s on the win!", bot.messageParts[2])
+			messageEmbed.Title = fmt.Sprintf("Congrats %s on the win!", username)
 
-			bot.session.ChannelMessageSendEmbed(bot.discordMessage.ChannelID, messageEmbed)
+			bot.messageSender.sendEmbedMessage(messageEmbed)
 		}
 	} else {
-		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "Command format: addwin [username]")
+		bot.messageSender.sendMessage("Command format: addwin [username]")
 	}
 }
 

@@ -9,6 +9,8 @@ import (
 type DataLayer interface {
 	AddUser(username string, guild_id string) error
 	GetTopFiveUsers(guild_id string) ([]User, error)
+	CheckUserExists(username string, guild_id string) (int, error)
+	AddWin(username string, guild_id string) error
 }
 
 type PostgresDataLayer struct {
@@ -47,4 +49,23 @@ func (db *PostgresDataLayer) GetTopFiveUsers(guild_id string) ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func (db *PostgresDataLayer) CheckUserExists(username string, guildID string) (int, error) {
+	row := db.dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", username, guildID)
+
+	var recordExists int
+	err := row.Scan(&recordExists)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return recordExists, nil
+}
+
+func (db *PostgresDataLayer) AddWin(username string, guildID string) error {
+	_, err := db.dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", username, guildID)
+
+	return err
 }
