@@ -87,49 +87,39 @@ func (bot *CatanBot) addWinCommand() {
 }
 
 func (bot *CatanBot) showLeaderboardCommand() {
-	bot.session.ChannelMessageSendEmbed(bot.discordMessage.ChannelID, bot.createLeaderboardResponse())
+	bot.messageSender.sendEmbedMessage(bot.createLeaderboardResponse())
 }
 
 func (bot *CatanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
-	rows, err := dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", bot.discordMessage.GuildID)
+	users, err := bot.db.GetTopFiveUsers(bot.messageParser.GetGuildID())
+
 	if err != nil {
-		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
+		bot.messageSender.sendMessage("An error has occurred")
 		fmt.Println("Error: ", err)
 		return nil
 	}
-
-	defer rows.Close()
 
 	var (
 		rankField      = discordgo.MessageEmbedField{"Rank", "", true}
 		usernameField  = discordgo.MessageEmbedField{"Username", "", true}
 		victoriesField = discordgo.MessageEmbedField{"Victories", "", true}
-
-		ranks     [5]string
-		usernames [5]string
-		victories [5]string
+		ranks          = make([]string, 0, 5)
+		usernames      = make([]string, 0, 5)
+		victories      = make([]string, 0, 5)
 	)
 
-	for i := 0; rows.Next(); i++ {
-		err = rows.Scan(&ranks[i], &usernames[i], &victories[i])
-		if err != nil {
-			bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
-			fmt.Println("Error: ", err)
-			return nil
-		}
+	for _, user := range users {
+		ranks = append(ranks, user.Rank)
+		usernames = append(usernames, user.Username)
+		victories = append(victories, user.Victories)
 	}
 
-	rankField.Value = strings.Join(ranks[:], "\n")
-	usernameField.Value = strings.Join(usernames[:], "\n")
-	victoriesField.Value = strings.Join(victories[:], "\n")
-
-	if rows.Err() != nil {
-		bot.session.ChannelMessageSend(bot.discordMessage.ChannelID, "An error has occurred")
-		fmt.Println("Error: ", err)
-		return nil
-	}
+	rankField.Value = strings.Join(ranks, "\n")
+	usernameField.Value = strings.Join(usernames, "\n")
+	victoriesField.Value = strings.Join(victories, "\n")
 
 	messageEmbed := discordgo.MessageEmbed{}
 	messageEmbed.Fields = []*discordgo.MessageEmbedField{&rankField, &usernameField, &victoriesField}
+
 	return &messageEmbed
 }

@@ -74,8 +74,14 @@ func (sender *MessageSenderMock) sendMessage(message string) {
 	sender.messageSent = message
 }
 
+func (sender *MessageSenderMock) sendEmbedMessage(embed *discordgo.MessageEmbed) {}
+
 type MockDataLayer struct{}
 
 func (db *MockDataLayer) AddUser(username string, guild_id string) error {
 	return nil
+}
+
+func (db *MockDataLayer) GetTopFiveUsers(guildID string) ([]User, error) {
+	return nil, nil
 }
