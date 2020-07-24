@@ -25,11 +25,11 @@ func (bot *CatanBot) handleCommand() {
 		bot.messageParts = strings.Split(bot.discordMessage.Content, " ")
 		if bot.messageParser.MessageLength() == 1 {
 			bot.messageSender.sendMessage(helpMessage)
-		} else if bot.messageParts[1] == "adduser" {
+		} else if bot.messageParser.GetCommand() == "adduser" {
 			bot.addUserCommand()
-		} else if bot.messageParts[1] == "addwin" {
+		} else if bot.messageParser.GetCommand() == "addwin" {
 			bot.addWinCommand()
-		} else if bot.messageParts[1] == "leaderboard" {
+		} else if bot.messageParser.GetCommand() == "leaderboard" {
 			bot.showLeaderboardCommand()
 		} else {
 			bot.messageSender.sendMessage(helpMessage)
