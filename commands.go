@@ -21,7 +21,7 @@ func (bot *catanBot) handleCommand() {
 		return
 	}
 
-	if bot.messageParser.messageLength() == 1 {
+	if !bot.messageParser.isCommandAction() {
 		bot.messageSender.sendMessage(helpMessage)
 		return
 	}
@@ -39,7 +39,7 @@ func (bot *catanBot) handleCommand() {
 }
 
 func (bot *catanBot) addUser() {
-	if bot.messageParser.messageLength() != 3 {
+	if !bot.messageParser.isCommandWithArgument() {
 		bot.messageSender.sendMessage("Command format: adduser [username]")
 	}
 
@@ -55,7 +55,7 @@ func (bot *catanBot) addUser() {
 }
 
 func (bot *catanBot) addWin() {
-	if bot.messageParser.messageLength() != 3 {
+	if !bot.messageParser.isCommandWithArgument() {
 		bot.messageSender.sendMessage("Command format: addwin [username]")
 	}
 

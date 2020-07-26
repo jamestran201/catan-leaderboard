@@ -8,6 +8,8 @@ import (
 
 type messageParser interface {
 	isCommand() bool
+	isCommandAction() bool
+	isCommandWithArgument() bool
 	messageLength() int
 	getCommand() string
 	getCommandArgument() string
@@ -21,6 +23,14 @@ type discordMessageParser struct {
 
 func (parser *discordMessageParser) isCommand() bool {
 	return strings.HasPrefix(parser.discordMessage.Content, commandPrefix)
+}
+
+func (parser *discordMessageParser) isCommandAction() bool {
+	return parser.messageLength() > 1
+}
+
+func (parser *discordMessageParser) isCommandWithArgument() bool {
+	return parser.messageLength() > 3
 }
 
 func (parser *discordMessageParser) messageLength() int {
