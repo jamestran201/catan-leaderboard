@@ -1,6 +1,6 @@
 package main
 
-type User struct {
+type user struct {
 	Rank      string
 	Username  string
 	Victories string

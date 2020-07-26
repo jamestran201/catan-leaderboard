@@ -72,9 +72,9 @@ func TestAddUser(t *testing.T) {
 	message := &discordgo.Message{Content: "catan! adduser hinata", GuildID: "1"}
 	messageCreate := &discordgo.MessageCreate{message}
 	sender := &MessageSenderMock{}
-	messageParser := &DiscordMessageParser{discordMessage: messageCreate}
-	db := &PostgresDataLayer{testDbConn}
-	bot := CatanBot{sender, messageParser, db}
+	messageParser := &discordMessageParser{discordMessage: messageCreate}
+	db := &postgresDataLayer{testDbConn}
+	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
 	expected := "Successfully added user: hinata"
@@ -86,14 +86,14 @@ func TestAddUser(t *testing.T) {
 func TestAddWin(t *testing.T) {
 	registerCleanup(t)
 
-	db := &PostgresDataLayer{testDbConn}
+	db := &postgresDataLayer{testDbConn}
 	db.AddUser("kageyama", "1")
 
 	message := &discordgo.Message{Content: "catan! addwin kageyama", GuildID: "1"}
 	messageCreate := &discordgo.MessageCreate{message}
 	sender := &MessageSenderMock{}
-	messageParser := &DiscordMessageParser{discordMessage: messageCreate}
-	bot := CatanBot{sender, messageParser, db}
+	messageParser := &discordMessageParser{discordMessage: messageCreate}
+	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
 	expectedTitle := "Congrats kageyama on the win!"
@@ -117,7 +117,7 @@ func TestAddWin(t *testing.T) {
 func TestShowLeaderboard(t *testing.T) {
 	registerCleanup(t)
 
-	db := &PostgresDataLayer{testDbConn}
+	db := &postgresDataLayer{testDbConn}
 	db.AddUser("kageyama", "1")
 	db.AddUser("oikawa", "1")
 
@@ -128,8 +128,8 @@ func TestShowLeaderboard(t *testing.T) {
 	message := &discordgo.Message{Content: "catan! leaderboard", GuildID: "1"}
 	messageCreate := &discordgo.MessageCreate{message}
 	sender := &MessageSenderMock{}
-	messageParser := &DiscordMessageParser{discordMessage: messageCreate}
-	bot := CatanBot{sender, messageParser, db}
+	messageParser := &discordMessageParser{discordMessage: messageCreate}
+	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
 	expectedFieldValues := []string{

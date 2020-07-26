@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v4"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 var dbConn *pgx.Conn
@@ -79,9 +80,9 @@ func messageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	messageSender := &DiscordMessageSender{session, m}
-	messageParser := &DiscordMessageParser{discordMessage: m}
-	db := &PostgresDataLayer{dbConn}
-	bot := CatanBot{messageSender, messageParser, db}
+	messageSender := &discordMessageSender{session, m}
+	messageParser := &discordMessageParser{discordMessage: m}
+	db := &postgresDataLayer{dbConn}
+	bot := catanBot{messageSender, messageParser, db}
 	bot.handleCommand()
 }

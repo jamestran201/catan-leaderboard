@@ -6,25 +6,25 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-type DataLayer interface {
-	AddUser(username string, guild_id string) error
-	GetTopFiveUsers(guild_id string) ([]User, error)
-	CheckUserExists(username string, guild_id string) (int, error)
-	AddWin(username string, guild_id string) error
+type dataLayer interface {
+	AddUser(username string, guildID string) error
+	GetTopFiveUsers(guildID string) ([]user, error)
+	CheckUserExists(username string, guildID string) (int, error)
+	AddWin(username string, guildID string) error
 }
 
-type PostgresDataLayer struct {
+type postgresDataLayer struct {
 	dbConn *pgx.Conn
 }
 
-func (db *PostgresDataLayer) AddUser(username string, guild_id string) error {
-	_, err := db.dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", username, guild_id)
+func (db *postgresDataLayer) AddUser(username string, guildID string) error {
+	_, err := db.dbConn.Exec(context.Background(), "INSERT INTO users (username, guild_id) VALUES ($1, $2)", username, guildID)
 
 	return err
 }
 
-func (db *PostgresDataLayer) GetTopFiveUsers(guild_id string) ([]User, error) {
-	rows, err := db.dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", guild_id)
+func (db *postgresDataLayer) GetTopFiveUsers(guildID string) ([]user, error) {
+	rows, err := db.dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", guildID)
 
 	defer rows.Close()
 
@@ -32,10 +32,10 @@ func (db *PostgresDataLayer) GetTopFiveUsers(guild_id string) ([]User, error) {
 		return nil, err
 	}
 
-	users := make([]User, 0, 5)
+	users := make([]user, 0, 5)
 
 	for i := 0; rows.Next(); i++ {
-		user := User{}
+		user := user{}
 		err = rows.Scan(&user.Rank, &user.Username, &user.Victories)
 		if err != nil {
 			return nil, err
@@ -51,7 +51,7 @@ func (db *PostgresDataLayer) GetTopFiveUsers(guild_id string) ([]User, error) {
 	return users, nil
 }
 
-func (db *PostgresDataLayer) CheckUserExists(username string, guildID string) (int, error) {
+func (db *postgresDataLayer) CheckUserExists(username string, guildID string) (int, error) {
 	row := db.dbConn.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = ($1) AND guild_id = ($2);", username, guildID)
 
 	var recordExists int
@@ -64,7 +64,7 @@ func (db *PostgresDataLayer) CheckUserExists(username string, guildID string) (i
 	return recordExists, nil
 }
 
-func (db *PostgresDataLayer) AddWin(username string, guildID string) error {
+func (db *postgresDataLayer) AddWin(username string, guildID string) error {
 	_, err := db.dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", username, guildID)
 
 	return err

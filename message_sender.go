@@ -2,20 +2,20 @@ package main
 
 import "github.com/bwmarrin/discordgo"
 
-type MessageSender interface {
+type messageSender interface {
 	sendMessage(message string)
 	sendEmbedMessage(embed *discordgo.MessageEmbed)
 }
 
-type DiscordMessageSender struct {
+type discordMessageSender struct {
 	session        *discordgo.Session
 	discordMessage *discordgo.MessageCreate
 }
 
-func (sender *DiscordMessageSender) sendMessage(message string) {
+func (sender *discordMessageSender) sendMessage(message string) {
 	sender.session.ChannelMessageSend(sender.discordMessage.ChannelID, message)
 }
 
-func (sender *DiscordMessageSender) sendEmbedMessage(embed *discordgo.MessageEmbed) {
+func (sender *discordMessageSender) sendEmbedMessage(embed *discordgo.MessageEmbed) {
 	sender.session.ChannelMessageSendEmbed(sender.discordMessage.ChannelID, embed)
 }

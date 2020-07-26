@@ -10,21 +10,21 @@ import (
 const commandPrefix = "catan!"
 const helpMessage = "The available commands are: adduser, addwin, leaderboard"
 
-type CatanBot struct {
-	messageSender MessageSender
-	messageParser MessageParser
-	db            DataLayer
+type catanBot struct {
+	messageSender messageSender
+	messageParser messageParser
+	db            dataLayer
 }
 
-func (bot *CatanBot) handleCommand() {
-	if bot.messageParser.IsCommand() {
-		if bot.messageParser.MessageLength() == 1 {
+func (bot *catanBot) handleCommand() {
+	if bot.messageParser.isCommand() {
+		if bot.messageParser.messageLength() == 1 {
 			bot.messageSender.sendMessage(helpMessage)
-		} else if bot.messageParser.GetCommand() == "adduser" {
+		} else if bot.messageParser.getCommand() == "adduser" {
 			bot.addUserCommand()
-		} else if bot.messageParser.GetCommand() == "addwin" {
+		} else if bot.messageParser.getCommand() == "addwin" {
 			bot.addWinCommand()
-		} else if bot.messageParser.GetCommand() == "leaderboard" {
+		} else if bot.messageParser.getCommand() == "leaderboard" {
 			bot.showLeaderboardCommand()
 		} else {
 			bot.messageSender.sendMessage(helpMessage)
@@ -32,26 +32,26 @@ func (bot *CatanBot) handleCommand() {
 	}
 }
 
-func (bot *CatanBot) addUserCommand() {
-	if bot.messageParser.MessageLength() == 3 {
-		err := bot.db.AddUser(bot.messageParser.GetCommandArgument(), bot.messageParser.GetGuildID())
+func (bot *catanBot) addUserCommand() {
+	if bot.messageParser.messageLength() == 3 {
+		err := bot.db.AddUser(bot.messageParser.getCommandArgument(), bot.messageParser.getGuildID())
 		if err != nil {
 			bot.messageSender.sendMessage("An error has occurred")
 			fmt.Println("Error: ", err)
 			return
 		}
 
-		response := fmt.Sprintf("Successfully added user: %s", bot.messageParser.GetCommandArgument())
+		response := fmt.Sprintf("Successfully added user: %s", bot.messageParser.getCommandArgument())
 		bot.messageSender.sendMessage(response)
 	} else {
 		bot.messageSender.sendMessage("Command format: adduser [username]")
 	}
 }
 
-func (bot *CatanBot) addWinCommand() {
-	if bot.messageParser.MessageLength() == 3 {
-		username := bot.messageParser.GetCommandArgument()
-		guildID := bot.messageParser.GetGuildID()
+func (bot *catanBot) addWinCommand() {
+	if bot.messageParser.messageLength() == 3 {
+		username := bot.messageParser.getCommandArgument()
+		guildID := bot.messageParser.getGuildID()
 
 		recordExists, err := bot.db.CheckUserExists(username, guildID)
 
@@ -83,12 +83,12 @@ func (bot *CatanBot) addWinCommand() {
 	}
 }
 
-func (bot *CatanBot) showLeaderboardCommand() {
+func (bot *catanBot) showLeaderboardCommand() {
 	bot.messageSender.sendEmbedMessage(bot.createLeaderboardResponse())
 }
 
-func (bot *CatanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
-	users, err := bot.db.GetTopFiveUsers(bot.messageParser.GetGuildID())
+func (bot *catanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
+	users, err := bot.db.GetTopFiveUsers(bot.messageParser.getGuildID())
 
 	if err != nil {
 		bot.messageSender.sendMessage("An error has occurred")

@@ -6,24 +6,24 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type MessageParser interface {
-	IsCommand() bool
-	MessageLength() int
-	GetCommand() string
-	GetCommandArgument() string
-	GetGuildID() string
+type messageParser interface {
+	isCommand() bool
+	messageLength() int
+	getCommand() string
+	getCommandArgument() string
+	getGuildID() string
 }
 
-type DiscordMessageParser struct {
+type discordMessageParser struct {
 	discordMessage *discordgo.MessageCreate
 	parsedMessage  []string
 }
 
-func (parser *DiscordMessageParser) IsCommand() bool {
+func (parser *discordMessageParser) isCommand() bool {
 	return strings.HasPrefix(parser.discordMessage.Content, commandPrefix)
 }
 
-func (parser *DiscordMessageParser) MessageLength() int {
+func (parser *discordMessageParser) messageLength() int {
 	if parser.parsedMessage == nil {
 		parser.parsedMessage = strings.Split(parser.discordMessage.Content, " ")
 	}
@@ -31,22 +31,22 @@ func (parser *DiscordMessageParser) MessageLength() int {
 	return len(parser.parsedMessage)
 }
 
-func (parser *DiscordMessageParser) GetCommand() string {
-	if parser.MessageLength() == 1 {
+func (parser *discordMessageParser) getCommand() string {
+	if parser.messageLength() == 1 {
 		return "" // make this return an error in the future
-	} else {
-		return parser.parsedMessage[1]
 	}
+
+	return parser.parsedMessage[1]
 }
 
-func (parser *DiscordMessageParser) GetCommandArgument() string {
-	if parser.MessageLength() < 3 {
+func (parser *discordMessageParser) getCommandArgument() string {
+	if parser.messageLength() < 3 {
 		return "" // make this return an error in the future
-	} else {
-		return parser.parsedMessage[2]
 	}
+
+	return parser.parsedMessage[2]
 }
 
-func (parser *DiscordMessageParser) GetGuildID() string {
+func (parser *discordMessageParser) getGuildID() string {
 	return parser.discordMessage.GuildID
 }
