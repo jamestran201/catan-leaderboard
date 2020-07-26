@@ -87,7 +87,7 @@ func TestAddWin(t *testing.T) {
 	registerCleanup(t)
 
 	db := &postgresDataLayer{testDbConn}
-	db.AddUser("kageyama", "1")
+	db.addUser("kageyama", "1")
 
 	message := &discordgo.Message{Content: "catan! addwin kageyama", GuildID: "1"}
 	messageCreate := &discordgo.MessageCreate{message}
@@ -118,12 +118,12 @@ func TestShowLeaderboard(t *testing.T) {
 	registerCleanup(t)
 
 	db := &postgresDataLayer{testDbConn}
-	db.AddUser("kageyama", "1")
-	db.AddUser("oikawa", "1")
+	db.addUser("kageyama", "1")
+	db.addUser("oikawa", "1")
 
-	db.AddWin("kageyama", "1")
-	db.AddWin("oikawa", "1")
-	db.AddWin("oikawa", "1")
+	db.addWin("kageyama", "1")
+	db.addWin("oikawa", "1")
+	db.addWin("oikawa", "1")
 
 	message := &discordgo.Message{Content: "catan! leaderboard", GuildID: "1"}
 	messageCreate := &discordgo.MessageCreate{message}

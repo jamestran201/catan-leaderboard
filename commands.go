@@ -43,7 +43,7 @@ func (bot *catanBot) addUser() {
 		bot.messageSender.sendMessage("Command format: adduser [username]")
 	}
 
-	err := bot.db.AddUser(bot.messageParser.getCommandArgument(), bot.messageParser.getGuildID())
+	err := bot.db.addUser(bot.messageParser.getCommandArgument(), bot.messageParser.getGuildID())
 	if err != nil {
 		bot.messageSender.sendMessage("An error has occurred")
 		fmt.Println("Error: ", err)
@@ -62,7 +62,7 @@ func (bot *catanBot) addWin() {
 	username := bot.messageParser.getCommandArgument()
 	guildID := bot.messageParser.getGuildID()
 
-	recordExists, err := bot.db.CheckUserExists(username, guildID)
+	recordExists, err := bot.db.checkUserExists(username, guildID)
 
 	if err != nil {
 		bot.messageSender.sendMessage("An error has occurred")
@@ -74,7 +74,7 @@ func (bot *catanBot) addWin() {
 		response := fmt.Sprintf("User %s does not exist", username)
 		bot.messageSender.sendMessage(response)
 	} else {
-		err = bot.db.AddWin(username, guildID)
+		err = bot.db.addWin(username, guildID)
 
 		if err != nil {
 			bot.messageSender.sendMessage("An error has occurred")
@@ -94,7 +94,7 @@ func (bot *catanBot) showLeaderboard() {
 }
 
 func (bot *catanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
-	users, err := bot.db.GetTopFiveUsers(bot.messageParser.getGuildID())
+	users, err := bot.db.getTopFiveUsers(bot.messageParser.getGuildID())
 
 	if err != nil {
 		bot.messageSender.sendMessage("An error has occurred")
@@ -112,9 +112,9 @@ func (bot *catanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
 	)
 
 	for _, user := range users {
-		ranks = append(ranks, user.Rank)
-		usernames = append(usernames, user.Username)
-		victories = append(victories, user.Victories)
+		ranks = append(ranks, user.rank)
+		usernames = append(usernames, user.username)
+		victories = append(victories, user.victories)
 	}
 
 	rankField.Value = strings.Join(ranks, "\n")

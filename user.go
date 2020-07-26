@@ -1,7 +1,7 @@
 package main
 
 type user struct {
-	Rank      string
-	Username  string
-	Victories string
+	rank      string
+	username  string
+	victories string
 }
