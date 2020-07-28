@@ -41,6 +41,7 @@ func (bot *catanBot) handleCommand() {
 func (bot *catanBot) addUser() {
 	if !bot.messageParser.isCommandWithArgument() {
 		bot.messageSender.sendMessage("Command format: adduser [username]")
+		return
 	}
 
 	err := bot.db.addUser(bot.messageParser.getCommandArgument(), bot.messageParser.getGuildID())
@@ -57,6 +58,7 @@ func (bot *catanBot) addUser() {
 func (bot *catanBot) addWin() {
 	if !bot.messageParser.isCommandWithArgument() {
 		bot.messageSender.sendMessage("Command format: addwin [username]")
+		return
 	}
 
 	username := bot.messageParser.getCommandArgument()

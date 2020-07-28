@@ -30,7 +30,7 @@ func (parser *discordMessageParser) isCommandAction() bool {
 }
 
 func (parser *discordMessageParser) isCommandWithArgument() bool {
-	return parser.messageLength() > 3
+	return parser.messageLength() >= 3
 }
 
 func (parser *discordMessageParser) messageLength() int {
