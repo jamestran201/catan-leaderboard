@@ -8,7 +8,7 @@ import (
 
 type dataLayer interface {
 	addUser(username string, guildID string) error
-	getTopFiveUsers(guildID string) ([]user, error)
+	getTopTwentyUsers(guildID string) ([]user, error)
 	checkUserExists(username string, guildID string) (int, error)
 	addWin(username string, guildID string) error
 }
@@ -23,8 +23,8 @@ func (db *postgresDataLayer) addUser(username string, guildID string) error {
 	return err
 }
 
-func (db *postgresDataLayer) getTopFiveUsers(guildID string) ([]user, error) {
-	rows, err := db.dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 5", guildID)
+func (db *postgresDataLayer) getTopTwentyUsers(guildID string) ([]user, error) {
+	rows, err := db.dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 20", guildID)
 
 	defer rows.Close()
 
@@ -32,7 +32,7 @@ func (db *postgresDataLayer) getTopFiveUsers(guildID string) ([]user, error) {
 		return nil, err
 	}
 
-	users := make([]user, 0, 5)
+	users := make([]user, 0, 20)
 
 	for i := 0; rows.Next(); i++ {
 		user := user{}

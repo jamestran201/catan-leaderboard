@@ -112,7 +112,7 @@ func (bot *catanBot) showLeaderboard() {
 }
 
 func (bot *catanBot) createLeaderboardResponse() (string, error) {
-	users, err := bot.db.getTopFiveUsers(bot.messageParser.getGuildID())
+	users, err := bot.db.getTopTwentyUsers(bot.messageParser.getGuildID())
 
 	if err != nil {
 		return "", err
