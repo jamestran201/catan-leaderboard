@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/olekukonko/tablewriter"
 )
 
 const commandPrefix = "catan!"
@@ -84,47 +84,50 @@ func (bot *catanBot) addWin() {
 			return
 		}
 
-		messageEmbed := bot.createLeaderboardResponse()
-		messageEmbed.Title = fmt.Sprintf("Congrats %s on the win!", username)
+		congratsMessage := fmt.Sprintf("Congrats %s on the win! :tada:\n", username)
 
-		bot.messageSender.sendEmbedMessage(messageEmbed)
+		leaderboardMessage, err := bot.createLeaderboardResponse()
+
+		if err != nil {
+			bot.messageSender.sendMessage("An error has occurred")
+			fmt.Println("Error: ", err)
+			return
+		}
+
+		message := fmt.Sprintf("%s%s", congratsMessage, leaderboardMessage)
+		bot.messageSender.sendMessage(message)
 	}
 }
 
 func (bot *catanBot) showLeaderboard() {
-	bot.messageSender.sendEmbedMessage(bot.createLeaderboardResponse())
-}
-
-func (bot *catanBot) createLeaderboardResponse() *discordgo.MessageEmbed {
-	users, err := bot.db.getTopFiveUsers(bot.messageParser.getGuildID())
+	message, err := bot.createLeaderboardResponse()
 
 	if err != nil {
 		bot.messageSender.sendMessage("An error has occurred")
 		fmt.Println("Error: ", err)
-		return nil
+		return
 	}
 
-	var (
-		rankField      = discordgo.MessageEmbedField{"Rank", "", true}
-		usernameField  = discordgo.MessageEmbedField{"Username", "", true}
-		victoriesField = discordgo.MessageEmbedField{"Victories", "", true}
-		ranks          = make([]string, 0, 5)
-		usernames      = make([]string, 0, 5)
-		victories      = make([]string, 0, 5)
-	)
+	bot.messageSender.sendMessage(message)
+}
+
+func (bot *catanBot) createLeaderboardResponse() (string, error) {
+	users, err := bot.db.getTopFiveUsers(bot.messageParser.getGuildID())
+
+	if err != nil {
+		return "", err
+	}
+
+	var stringBuilder strings.Builder
+	table := tablewriter.NewWriter(&stringBuilder)
+	table.SetHeader([]string{"Rank", "Username", "Victories"})
 
 	for _, user := range users {
-		ranks = append(ranks, user.rank)
-		usernames = append(usernames, user.username)
-		victories = append(victories, user.victories)
+		data := []string{user.rank, user.username, user.victories}
+		table.Append(data)
 	}
 
-	rankField.Value = strings.Join(ranks, "\n")
-	usernameField.Value = strings.Join(usernames, "\n")
-	victoriesField.Value = strings.Join(victories, "\n")
+	table.Render()
 
-	messageEmbed := discordgo.MessageEmbed{}
-	messageEmbed.Fields = []*discordgo.MessageEmbedField{&rankField, &usernameField, &victoriesField}
-
-	return &messageEmbed
+	return fmt.Sprintf("```%s```", stringBuilder.String()), nil
 }

@@ -96,21 +96,15 @@ func TestAddWin(t *testing.T) {
 	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
-	expectedTitle := "Congrats kageyama on the win!"
-	if sender.messageEmbed.Title != expectedTitle {
-		t.Errorf("\nGot: %s\nExpect: %s\n", sender.messageEmbed.Title, expectedTitle)
-	}
-
-	expectedFieldValues := []string{
-		"1",
-		"kageyama",
-		"1",
-	}
-	fields := sender.messageEmbed.Fields
-	for i, field := range fields {
-		if field.Value != expectedFieldValues[i] {
-			t.Errorf("\nGot: %s\nExpect: %s\n", field.Value, expectedFieldValues[i])
-		}
+	expectedLeaderboard := `+------+----------+-----------+
+| RANK | USERNAME | VICTORIES |
++------+----------+-----------+
+|    1 | kageyama |         1 |
++------+----------+-----------+
+`
+	expectedMessage := fmt.Sprintf("Congrats kageyama on the win! :tada:\n```%s```", expectedLeaderboard)
+	if sender.messageSent != expectedMessage {
+		t.Errorf("\nGot: %s\nExpect: %s\n", sender.messageSent, expectedMessage)
 	}
 }
 
@@ -132,16 +126,17 @@ func TestShowLeaderboard(t *testing.T) {
 	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
-	expectedFieldValues := []string{
-		"1\n2",
-		"oikawa\nkageyama",
-		"2\n1",
-	}
-	fields := sender.messageEmbed.Fields
-	for i, field := range fields {
-		if field.Value != expectedFieldValues[i] {
-			t.Errorf("\nGot: %s\nExpect: %s\n", field.Value, expectedFieldValues[i])
-		}
+	expectedLeaderboard := `+------+----------+-----------+
+| RANK | USERNAME | VICTORIES |
++------+----------+-----------+
+|    1 | oikawa   |         2 |
+|    2 | kageyama |         1 |
++------+----------+-----------+
+`
+	expectedValue := fmt.Sprintf("```%s```", expectedLeaderboard)
+
+	if sender.messageSent != expectedValue {
+		t.Errorf("\nGot: %s\nExpect: %s\n", sender.messageSent, expectedValue)
 	}
 }
 
