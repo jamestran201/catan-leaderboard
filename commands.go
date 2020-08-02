@@ -38,24 +38,25 @@ func (bot *catanBot) handleCommand() {
 }
 
 func (bot *catanBot) addUser() {
-	if !bot.messageParser.isCommandWithArgument() {
+	if !bot.messageParser.numArgumentsAtLeast(1) {
 		bot.messageSender.sendMessage("Command format: adduser [username]")
 		return
 	}
 
-	err := bot.db.addUser(bot.messageParser.getCommandArgument(), bot.messageParser.getGuildID())
+	username := bot.messageParser.getCommandArgument()
+	err := bot.db.addUser(username, bot.messageParser.getGuildID())
 	if err != nil {
 		bot.messageSender.sendMessage("An error has occurred")
 		fmt.Println("Error: ", err)
 		return
 	}
 
-	response := fmt.Sprintf("Successfully added user: %s", bot.messageParser.getCommandArgument())
+	response := fmt.Sprintf("Successfully added user: %s", username)
 	bot.messageSender.sendMessage(response)
 }
 
 func (bot *catanBot) addWin() {
-	if !bot.messageParser.isCommandWithArgument() {
+	if !bot.messageParser.numArgumentsAtLeast(1) {
 		bot.messageSender.sendMessage("Command format: addwin [username]")
 		return
 	}

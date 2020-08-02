@@ -7,11 +7,12 @@ import (
 )
 
 const commandPrefix = "catan!"
+const minCommandLength = 2
 
 type messageParser interface {
 	isCommand() bool
 	isCommandAction() bool
-	isCommandWithArgument() bool
+	numArgumentsAtLeast(int) bool
 	messageLength() int
 	getCommand() string
 	getCommandArgument() string
@@ -31,8 +32,8 @@ func (parser *discordMessageParser) isCommandAction() bool {
 	return parser.messageLength() > 1
 }
 
-func (parser *discordMessageParser) isCommandWithArgument() bool {
-	return parser.messageLength() >= 3
+func (parser *discordMessageParser) numArgumentsAtLeast(n int) bool {
+	return parser.messageLength() >= (minCommandLength + n)
 }
 
 func (parser *discordMessageParser) messageLength() int {
