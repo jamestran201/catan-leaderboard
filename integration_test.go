@@ -140,6 +140,31 @@ func TestShowLeaderboard(t *testing.T) {
 	}
 }
 
+func TestRecordGame(t *testing.T) {
+	registerCleanup(t)
+
+	db := &postgresDataLayer{testDbConn}
+	db.addUser("hinata", "1")
+
+	message := &discordgo.Message{Content: "catan! record hinata 10", GuildID: "1"}
+	messageCreate := &discordgo.MessageCreate{message}
+	sender := &MessageSenderMock{}
+	messageParser := &discordMessageParser{discordMessage: messageCreate}
+	bot := catanBot{sender, messageParser, db}
+	bot.handleCommand()
+
+	expectedLeaderboard := `+------+----------+-----------+--------+-------+
+| RANK | USERNAME | VICTORIES | POINTS | GAMES |
++------+----------+-----------+--------+-------+
+|    1 | hinata   |         0 |     10 |     1 |
++------+----------+-----------+--------+-------+
+`
+	expectedMessage := fmt.Sprintf("Added 10 points for hinata\n```%s```", expectedLeaderboard)
+	if sender.messageSent != expectedMessage {
+		t.Errorf("\nGot: %s\nExpect: %s\n", sender.messageSent, expectedMessage)
+	}
+}
+
 type MessageSenderMock struct {
 	messageSent  string
 	messageEmbed *discordgo.MessageEmbed

@@ -11,6 +11,7 @@ type dataLayer interface {
 	getTopTwentyUsers(guildID string) ([]user, error)
 	checkUserExists(username string, guildID string) (int, error)
 	addWin(username string, guildID string) error
+	addPointsAndGame(username string, points string, guildID string) error
 }
 
 type postgresDataLayer struct {
@@ -75,6 +76,20 @@ func (db *postgresDataLayer) checkUserExists(username string, guildID string) (i
 
 func (db *postgresDataLayer) addWin(username string, guildID string) error {
 	_, err := db.dbConn.Exec(context.Background(), "UPDATE users SET games_won = games_won + 1 WHERE username = ($1) AND guild_id = ($2)", username, guildID)
+
+	return err
+}
+
+func (db *postgresDataLayer) addPointsAndGame(username string, points string, guildID string) error {
+	_, err := db.dbConn.Exec(
+		context.Background(),
+		`UPDATE users
+		SET
+			points = points + ($1),
+			games = games + 1
+		WHERE username = ($2) AND guild_id = ($3)`,
+		points, username, guildID,
+	)
 
 	return err
 }

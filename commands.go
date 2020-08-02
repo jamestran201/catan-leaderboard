@@ -7,7 +7,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-const helpMessage = "The available commands are: adduser, addwin, leaderboard"
+const helpMessage = "The available commands are: adduser, addwin, leaderboard, record"
 
 type catanBot struct {
 	messageSender messageSender
@@ -114,7 +114,48 @@ func (bot *catanBot) showLeaderboard() {
 }
 
 func (bot *catanBot) recordGame() {
+	if !bot.messageParser.numArgumentsAtLeast(2) {
+		bot.messageSender.sendMessage("Command format: record [username] [points]")
+		return
+	}
 
+	username := bot.messageParser.getCommandArgument(1)
+	points := bot.messageParser.getCommandArgument(2)
+	guildID := bot.messageParser.getGuildID()
+
+	recordExists, err := bot.db.checkUserExists(username, guildID)
+
+	if err != nil {
+		bot.messageSender.sendMessage("An error has occurred")
+		fmt.Println("Error: ", err)
+		return
+	}
+
+	if recordExists == 0 {
+		response := fmt.Sprintf("User %s does not exist", username)
+		bot.messageSender.sendMessage(response)
+	} else {
+		err = bot.db.addPointsAndGame(username, points, guildID)
+
+		if err != nil {
+			bot.messageSender.sendMessage("An error has occurred")
+			fmt.Println("Error: ", err)
+			return
+		}
+
+		confirmation := fmt.Sprintf("Added %s points for %s\n", points, username)
+
+		leaderboardMessage, err := bot.createLeaderboardResponse()
+
+		if err != nil {
+			bot.messageSender.sendMessage("An error has occurred")
+			fmt.Println("Error: ", err)
+			return
+		}
+
+		message := fmt.Sprintf("%s%s", confirmation, leaderboardMessage)
+		bot.messageSender.sendMessage(message)
+	}
 }
 
 func (bot *catanBot) createLeaderboardResponse() (string, error) {
