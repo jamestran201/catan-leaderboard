@@ -6,6 +6,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+const commandPrefix = "catan!"
+
 type messageParser interface {
 	isCommand() bool
 	isCommandAction() bool

@@ -96,11 +96,11 @@ func TestAddWin(t *testing.T) {
 	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
-	expectedLeaderboard := `+------+----------+-----------+
-| RANK | USERNAME | VICTORIES |
-+------+----------+-----------+
-|    1 | kageyama |         1 |
-+------+----------+-----------+
+	expectedLeaderboard := `+------+----------+-----------+--------+-------+
+| RANK | USERNAME | VICTORIES | POINTS | GAMES |
++------+----------+-----------+--------+-------+
+|    1 | kageyama |         1 |      0 |     0 |
++------+----------+-----------+--------+-------+
 `
 	expectedMessage := fmt.Sprintf("Congrats kageyama on the win! :tada:\n```%s```", expectedLeaderboard)
 	if sender.messageSent != expectedMessage {
@@ -126,12 +126,12 @@ func TestShowLeaderboard(t *testing.T) {
 	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
-	expectedLeaderboard := `+------+----------+-----------+
-| RANK | USERNAME | VICTORIES |
-+------+----------+-----------+
-|    1 | oikawa   |         2 |
-|    2 | kageyama |         1 |
-+------+----------+-----------+
+	expectedLeaderboard := `+------+----------+-----------+--------+-------+
+| RANK | USERNAME | VICTORIES | POINTS | GAMES |
++------+----------+-----------+--------+-------+
+|    1 | oikawa   |         2 |      0 |     0 |
+|    2 | kageyama |         1 |      0 |     0 |
++------+----------+-----------+--------+-------+
 `
 	expectedValue := fmt.Sprintf("```%s```", expectedLeaderboard)
 

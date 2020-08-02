@@ -7,7 +7,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-const commandPrefix = "catan!"
 const helpMessage = "The available commands are: adduser, addwin, leaderboard"
 
 type catanBot struct {
@@ -120,10 +119,10 @@ func (bot *catanBot) createLeaderboardResponse() (string, error) {
 
 	var stringBuilder strings.Builder
 	table := tablewriter.NewWriter(&stringBuilder)
-	table.SetHeader([]string{"Rank", "Username", "Victories"})
+	table.SetHeader([]string{"Rank", "Username", "Victories", "Points", "Games"})
 
 	for _, user := range users {
-		data := []string{user.rank, user.username, user.victories}
+		data := []string{user.rank, user.username, user.victories, user.points, user.games}
 		table.Append(data)
 	}
 

@@ -24,7 +24,16 @@ func (db *postgresDataLayer) addUser(username string, guildID string) error {
 }
 
 func (db *postgresDataLayer) getTopTwentyUsers(guildID string) ([]user, error) {
-	rows, err := db.dbConn.Query(context.Background(), "SELECT CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) FROM users WHERE guild_id = ($1) LIMIT 20", guildID)
+	rows, err := db.dbConn.Query(
+		context.Background(),
+		`SELECT
+			CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) ,
+			CAST(points AS TEXT), CAST(games AS TEXT)
+		FROM users
+		WHERE guild_id = ($1)
+		LIMIT 20`,
+		guildID,
+	)
 
 	defer rows.Close()
 
@@ -36,7 +45,7 @@ func (db *postgresDataLayer) getTopTwentyUsers(guildID string) ([]user, error) {
 
 	for i := 0; rows.Next(); i++ {
 		user := user{}
-		err = rows.Scan(&user.rank, &user.username, &user.victories)
+		err = rows.Scan(&user.rank, &user.username, &user.victories, &user.points, &user.games)
 		if err != nil {
 			return nil, err
 		}
