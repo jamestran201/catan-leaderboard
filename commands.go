@@ -32,6 +32,8 @@ func (bot *catanBot) handleCommand() {
 		bot.addWin()
 	case "leaderboard":
 		bot.showLeaderboard()
+	case "record":
+		bot.recordGame()
 	default:
 		bot.messageSender.sendMessage(helpMessage)
 	}
@@ -43,7 +45,7 @@ func (bot *catanBot) addUser() {
 		return
 	}
 
-	username := bot.messageParser.getCommandArgument()
+	username := bot.messageParser.getCommandArgument(1)
 	err := bot.db.addUser(username, bot.messageParser.getGuildID())
 	if err != nil {
 		bot.messageSender.sendMessage("An error has occurred")
@@ -61,7 +63,7 @@ func (bot *catanBot) addWin() {
 		return
 	}
 
-	username := bot.messageParser.getCommandArgument()
+	username := bot.messageParser.getCommandArgument(1)
 	guildID := bot.messageParser.getGuildID()
 
 	recordExists, err := bot.db.checkUserExists(username, guildID)
@@ -109,6 +111,10 @@ func (bot *catanBot) showLeaderboard() {
 	}
 
 	bot.messageSender.sendMessage(message)
+}
+
+func (bot *catanBot) recordGame() {
+
 }
 
 func (bot *catanBot) createLeaderboardResponse() (string, error) {

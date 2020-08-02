@@ -15,7 +15,7 @@ type messageParser interface {
 	numArgumentsAtLeast(int) bool
 	messageLength() int
 	getCommand() string
-	getCommandArgument() string
+	getCommandArgument(int) string
 	getGuildID() string
 }
 
@@ -52,12 +52,13 @@ func (parser *discordMessageParser) getCommand() string {
 	return parser.parsedMessage[1]
 }
 
-func (parser *discordMessageParser) getCommandArgument() string {
-	if parser.messageLength() < 3 {
+func (parser *discordMessageParser) getCommandArgument(position int) string {
+	i := minCommandLength + position - 1
+	if (parser.messageLength()-1) < i || i < 1 {
 		return "" // make this return an error in the future
 	}
 
-	return parser.parsedMessage[2]
+	return parser.parsedMessage[i]
 }
 
 func (parser *discordMessageParser) getGuildID() string {
