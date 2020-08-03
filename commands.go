@@ -170,7 +170,15 @@ func (bot *catanBot) createLeaderboardResponse() (string, error) {
 	table.SetHeader([]string{"Rank", "Username", "Victories", "Points", "Games", "PPG"})
 
 	for _, user := range users {
-		data := []string{user.rank, user.username, user.victories, user.points, user.games, user.points_per_game}
+		ppgFloat := fmt.Sprintf("%.2f", user.pointsPerGame)
+		data := []string{
+			user.rank,
+			user.username,
+			user.victories,
+			user.points,
+			user.games,
+			ppgFloat,
+		}
 		table.Append(data)
 	}
 

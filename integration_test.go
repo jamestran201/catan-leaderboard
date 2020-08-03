@@ -96,11 +96,11 @@ func TestAddWin(t *testing.T) {
 	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
-	expectedLeaderboard := `+------+----------+-----------+--------+-------+-----+
-| RANK | USERNAME | VICTORIES | POINTS | GAMES | PPG |
-+------+----------+-----------+--------+-------+-----+
-|    1 | kageyama |         1 |      0 |     0 |   0 |
-+------+----------+-----------+--------+-------+-----+
+	expectedLeaderboard := `+------+----------+-----------+--------+-------+------+
+| RANK | USERNAME | VICTORIES | POINTS | GAMES | PPG  |
++------+----------+-----------+--------+-------+------+
+|    1 | kageyama |         1 |      0 |     0 | 0.00 |
++------+----------+-----------+--------+-------+------+
 `
 	expectedMessage := fmt.Sprintf("Congrats kageyama on the win! :tada:\n```%s```", expectedLeaderboard)
 	if sender.messageSent != expectedMessage {
@@ -126,12 +126,12 @@ func TestShowLeaderboard(t *testing.T) {
 	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
-	expectedLeaderboard := `+------+----------+-----------+--------+-------+-----+
-| RANK | USERNAME | VICTORIES | POINTS | GAMES | PPG |
-+------+----------+-----------+--------+-------+-----+
-|    1 | oikawa   |         2 |      0 |     0 |   0 |
-|    2 | kageyama |         1 |      0 |     0 |   0 |
-+------+----------+-----------+--------+-------+-----+
+	expectedLeaderboard := `+------+----------+-----------+--------+-------+------+
+| RANK | USERNAME | VICTORIES | POINTS | GAMES | PPG  |
++------+----------+-----------+--------+-------+------+
+|    1 | oikawa   |         2 |      0 |     0 | 0.00 |
+|    2 | kageyama |         1 |      0 |     0 | 0.00 |
++------+----------+-----------+--------+-------+------+
 `
 	expectedValue := fmt.Sprintf("```%s```", expectedLeaderboard)
 
@@ -145,6 +145,7 @@ func TestRecordGame(t *testing.T) {
 
 	db := &postgresDataLayer{testDbConn}
 	db.addUser("hinata", "1")
+	db.updateGameStats("hinata", "3", "1")
 
 	message := &discordgo.Message{Content: "catan! record hinata 10", GuildID: "1"}
 	messageCreate := &discordgo.MessageCreate{message}
@@ -153,11 +154,11 @@ func TestRecordGame(t *testing.T) {
 	bot := catanBot{sender, messageParser, db}
 	bot.handleCommand()
 
-	expectedLeaderboard := `+------+----------+-----------+--------+-------+-----+
-| RANK | USERNAME | VICTORIES | POINTS | GAMES | PPG |
-+------+----------+-----------+--------+-------+-----+
-|    1 | hinata   |         0 |     10 |     1 |  10 |
-+------+----------+-----------+--------+-------+-----+
+	expectedLeaderboard := `+------+----------+-----------+--------+-------+------+
+| RANK | USERNAME | VICTORIES | POINTS | GAMES | PPG  |
++------+----------+-----------+--------+-------+------+
+|    1 | hinata   |         0 |     13 |     2 | 6.50 |
++------+----------+-----------+--------+-------+------+
 `
 	expectedMessage := fmt.Sprintf("Added 10 points for hinata\n```%s```", expectedLeaderboard)
 	if sender.messageSent != expectedMessage {

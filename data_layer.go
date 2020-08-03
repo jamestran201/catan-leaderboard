@@ -29,7 +29,7 @@ func (db *postgresDataLayer) getTopTwentyUsers(guildID string) ([]user, error) {
 		context.Background(),
 		`SELECT
 			CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) ,
-			CAST(points AS TEXT), CAST(games AS TEXT), CAST(points_per_game AS TEXT)
+			CAST(points AS TEXT), CAST(games AS TEXT), points_per_game
 		FROM users
 		WHERE guild_id = ($1)
 		LIMIT 20`,
@@ -52,7 +52,7 @@ func (db *postgresDataLayer) getTopTwentyUsers(guildID string) ([]user, error) {
 			&user.victories,
 			&user.points,
 			&user.games,
-			&user.points_per_game,
+			&user.pointsPerGame,
 		)
 		if err != nil {
 			return nil, err
