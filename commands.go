@@ -135,7 +135,7 @@ func (bot *catanBot) recordGame() {
 		response := fmt.Sprintf("User %s does not exist", username)
 		bot.messageSender.sendMessage(response)
 	} else {
-		err = bot.db.addPointsAndGame(username, points, guildID)
+		err = bot.db.updateGameStats(username, points, guildID)
 
 		if err != nil {
 			bot.messageSender.sendMessage("An error has occurred")
@@ -167,10 +167,10 @@ func (bot *catanBot) createLeaderboardResponse() (string, error) {
 
 	var stringBuilder strings.Builder
 	table := tablewriter.NewWriter(&stringBuilder)
-	table.SetHeader([]string{"Rank", "Username", "Victories", "Points", "Games"})
+	table.SetHeader([]string{"Rank", "Username", "Victories", "Points", "Games", "PPG"})
 
 	for _, user := range users {
-		data := []string{user.rank, user.username, user.victories, user.points, user.games}
+		data := []string{user.rank, user.username, user.victories, user.points, user.games, user.points_per_game}
 		table.Append(data)
 	}
 

@@ -11,7 +11,7 @@ type dataLayer interface {
 	getTopTwentyUsers(guildID string) ([]user, error)
 	checkUserExists(username string, guildID string) (int, error)
 	addWin(username string, guildID string) error
-	addPointsAndGame(username string, points string, guildID string) error
+	updateGameStats(username string, points string, guildID string) error
 }
 
 type postgresDataLayer struct {
@@ -29,7 +29,7 @@ func (db *postgresDataLayer) getTopTwentyUsers(guildID string) ([]user, error) {
 		context.Background(),
 		`SELECT
 			CAST(RANK() OVER (ORDER BY games_won DESC) AS TEXT), username, CAST(games_won AS TEXT) ,
-			CAST(points AS TEXT), CAST(games AS TEXT)
+			CAST(points AS TEXT), CAST(games AS TEXT), CAST(points_per_game AS TEXT)
 		FROM users
 		WHERE guild_id = ($1)
 		LIMIT 20`,
@@ -46,7 +46,14 @@ func (db *postgresDataLayer) getTopTwentyUsers(guildID string) ([]user, error) {
 
 	for i := 0; rows.Next(); i++ {
 		user := user{}
-		err = rows.Scan(&user.rank, &user.username, &user.victories, &user.points, &user.games)
+		err = rows.Scan(
+			&user.rank,
+			&user.username,
+			&user.victories,
+			&user.points,
+			&user.games,
+			&user.points_per_game,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -80,8 +87,16 @@ func (db *postgresDataLayer) addWin(username string, guildID string) error {
 	return err
 }
 
-func (db *postgresDataLayer) addPointsAndGame(username string, points string, guildID string) error {
-	_, err := db.dbConn.Exec(
+func (db *postgresDataLayer) updateGameStats(username string, points string, guildID string) error {
+	tx, err := db.dbConn.Begin(context.Background())
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(
 		context.Background(),
 		`UPDATE users
 		SET
@@ -91,5 +106,20 @@ func (db *postgresDataLayer) addPointsAndGame(username string, points string, gu
 		points, username, guildID,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(context.Background(), "UPDATE users SET points_per_game = CAST(points as real) / games WHERE username = ($1) AND guild_id = ($2)", username, guildID)
+
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
